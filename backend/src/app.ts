@@ -8,6 +8,7 @@ import PDFDocument from "pdfkit";
 import fs from "node:fs";
 import path from "node:path";
 import Stripe from "stripe";
+import { rateLimit } from "express-rate-limit";
 import {
   AppealStatus,
   CheckpointType,
@@ -123,9 +124,17 @@ async function recalculateEventRanks(eventId: string) {
 
 export function createApp() {
   const app = express();
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 300,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Muitas requisições. Tente novamente em alguns minutos." },
+  });
 
   app.use(cors());
   app.use(express.json());
+  app.use(limiter);
   app.use("/certificates", express.static(path.resolve(process.cwd(), "src/uploads/certificates")));
 
   app.get("/health", (_req, res) => {
