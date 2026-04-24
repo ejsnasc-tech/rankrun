@@ -1,12 +1,15 @@
 // @ts-nocheck
 import { Router } from "express";
 import multer from "multer";
+import { z } from "zod";
 import { createWorker } from "tesseract.js";
 // pdf-parse v2 expõe a classe PDFParse
 const { PDFParse } = require("pdf-parse");
 import { Role } from "../../types/enums";
 import { allowRoles, AuthenticatedRequest, requireAuth } from "../../middlewares/auth";
 import { extractResultFromText } from "../../services/certificate-parser";
+import { lookupResult } from "../../services/results-lookup";
+import { prisma } from "../../prisma/client";
 
 export const importRouter = Router();
 
@@ -63,5 +66,51 @@ importRouter.post(
       filename: originalname,
       ...extracted,
     });
+  }
+);
+
+/**
+ * POST /me/results/lookup
+ * { raceCatalogId, bib?, useMyCpf? }
+ * Busca resultado oficial em base mock (futuramente: scrapers reais).
+ * Se useMyCpf, usa o documento do usuário autenticado.
+ */
+const lookupSchema = z.object({
+  raceCatalogId: z.string().min(1),
+  bib: z.string().optional(),
+  useMyCpf: z.boolean().optional(),
+});
+
+importRouter.post(
+  "/lookup",
+  requireAuth,
+  allowRoles(Role.corredor),
+  async (req: AuthenticatedRequest, res) => {
+    const parsed = lookupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Dados inválidos.", errors: parsed.error.format() });
+    }
+
+    let cpf: string | undefined;
+    if (parsed.data.useMyCpf) {
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+      cpf = user?.document ?? undefined;
+      if (!cpf) {
+        return res.status(400).json({
+          message: "Você ainda não cadastrou seu CPF no perfil. Cadastre ou informe o número de peito.",
+        });
+      }
+    }
+
+    const result = lookupResult(parsed.data.raceCatalogId, { cpf, bib: parsed.data.bib });
+
+    if (!result) {
+      return res.status(404).json({
+        message: "Não encontramos seu resultado nesta prova ainda.",
+        hint: "Confira no site oficial da prova ou importe seu certificado.",
+      });
+    }
+
+    return res.json(result);
   }
 );
