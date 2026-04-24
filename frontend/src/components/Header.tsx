@@ -26,6 +26,11 @@ const adminNav: NavItem[] = [
   { to: "/admin/relatorios", label: "Relatórios" },
 ];
 
+const publicNav: NavItem[] = [
+  { to: "/eventos", label: "Corridas" },
+  { to: "/atletas", label: "Atletas" },
+];
+
 export function Header({ area }: HeaderProps) {
   const { user, logout } = useAuth();
   const isAdminArea = area === "admin";
@@ -42,7 +47,7 @@ export function Header({ area }: HeaderProps) {
     ? "rounded bg-orange-400 px-3 py-1 text-slate-900 hover:bg-orange-300"
     : "rounded bg-orange-500 px-3 py-1 text-white hover:bg-orange-600";
 
-  const navItems = area === "runner" ? runnerNav : area === "admin" ? adminNav : [];
+  const navItems = area === "runner" ? runnerNav : area === "admin" ? adminNav : publicNav;
 
   const navLinkClass = (active: boolean) => {
     if (isAdminArea) {

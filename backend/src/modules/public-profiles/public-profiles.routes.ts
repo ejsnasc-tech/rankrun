@@ -70,6 +70,79 @@ function computeBadges(results: any[]): { code: string; title: string; subtitle:
   return badges;
 }
 
+// GET /public/atletas — listagem com busca por nome/cidade/uf
+publicProfilesRouter.get("/atletas", async (req, res) => {
+  const q = (req.query.q as string | undefined)?.trim() ?? "";
+  const uf = (req.query.uf as string | undefined)?.trim().toUpperCase() ?? "";
+
+  const where: any = { publicProfile: true, slug: { not: null }, role: "corredor" };
+  if (uf) where.uf = uf;
+  if (q) {
+    where.OR = [
+      { name: { contains: q } },
+      { city: { contains: q } },
+    ];
+  }
+
+  const users = await prisma.user.findMany({
+    where,
+    select: { id: true, name: true, slug: true, city: true, uf: true, bio: true, results: { select: { id: true } } },
+    take: 100,
+  });
+
+  const atletas = users
+    .map((u) => ({ name: u.name, slug: u.slug, city: u.city, uf: u.uf, bio: u.bio, totalRaces: u.results.length }))
+    .sort((a, b) => b.totalRaces - a.totalRaces);
+
+  return res.json({ atletas });
+});
+
+// GET /public/rankings — top atletas por distância
+publicProfilesRouter.get("/rankings", async (_req, res) => {
+  const buckets = [
+    { distance: 5000, label: "5K", tolerance: 200 },
+    { distance: 10000, label: "10K", tolerance: 200 },
+    { distance: 21097, label: "Meia maratona", tolerance: 200 },
+    { distance: 42195, label: "Maratona", tolerance: 200 },
+  ];
+
+  const users = await prisma.user.findMany({
+    where: { publicProfile: true, slug: { not: null }, role: "corredor" },
+    select: {
+      name: true,
+      slug: true,
+      city: true,
+      uf: true,
+      results: {
+        select: { distanceMeters: true, netTimeSeconds: true, raceName: true, raceDate: true },
+      },
+    },
+  });
+
+  const rankings = buckets.map((b) => {
+    const candidates = users
+      .map((u) => {
+        const matches = u.results.filter((r) => Math.abs(r.distanceMeters - b.distance) <= b.tolerance);
+        if (matches.length === 0) return null;
+        const best = matches.reduce((a, c) => (a.netTimeSeconds < c.netTimeSeconds ? a : c));
+        return {
+          name: u.name,
+          slug: u.slug,
+          city: u.city,
+          uf: u.uf,
+          netTimeSeconds: best.netTimeSeconds,
+          raceName: best.raceName,
+          raceDate: best.raceDate,
+        };
+      })
+      .filter(Boolean) as any[];
+    candidates.sort((a, b2) => a.netTimeSeconds - b2.netTimeSeconds);
+    return { distance: b.distance, label: b.label, top: candidates.slice(0, 20) };
+  });
+
+  return res.json({ rankings });
+});
+
 // GET /public/atletas/:slug — página pública (sem auth)
 publicProfilesRouter.get("/atletas/:slug", async (req, res) => {
   const slug = req.params.slug;
@@ -122,10 +195,30 @@ publicProfilesRouter.get("/atletas/:slug", async (req, res) => {
 
   const badges = computeBadges(results);
 
+  // Evolução por mês — pace médio (s/km) das provas de cada mês (últimos 24 meses)
+  const evolucaoMap = new Map<string, { totalSeconds: number; totalKm: number }>();
+  for (const r of results) {
+    const d = new Date(r.raceDate);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const prev = evolucaoMap.get(key) ?? { totalSeconds: 0, totalKm: 0 };
+    prev.totalSeconds += r.netTimeSeconds;
+    prev.totalKm += r.distanceMeters / 1000;
+    evolucaoMap.set(key, prev);
+  }
+  const evolucao = Array.from(evolucaoMap.entries())
+    .map(([month, v]) => ({
+      month,
+      paceSeconds: v.totalKm > 0 ? Math.round(v.totalSeconds / v.totalKm) : 0,
+      km: Math.round(v.totalKm * 10) / 10,
+    }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(-24);
+
   return res.json({
     user: { name: user.name, bio: user.bio, city: user.city, uf: user.uf, slug: user.slug, since: user.createdAt },
     stats: { totalRaces, totalKm, prs },
     badges,
+    evolucao,
     results,
   });
 });

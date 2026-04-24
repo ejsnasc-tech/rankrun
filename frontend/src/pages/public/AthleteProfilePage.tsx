@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { api } from "../../services/api";
 import { formatarTempo, formatarDistancia } from "../../utils/format";
 
@@ -31,6 +32,7 @@ interface Profile {
   user: { name: string; bio?: string | null; city?: string | null; uf?: string | null; slug: string; since: string };
   stats: { totalRaces: number; totalKm: number; prs: PR[] };
   badges: Badge[];
+  evolucao: { month: string; paceSeconds: number; km: number }[];
   results: ResultRow[];
 }
 
@@ -193,6 +195,37 @@ export function AthleteProfilePage() {
                   <p className="text-xs text-gray-400">{new Date(pr.raceDate).toLocaleDateString("pt-BR")}</p>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Evolução */}
+        {data.evolucao.length >= 2 && (
+          <section className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">Evolução do pace</h2>
+            <p className="text-xs text-gray-500">Pace médio (min/km) por mês, considerando todas as provas do período.</p>
+            <div className="mt-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={data.evolucao.map((p) => ({ ...p, paceMin: p.paceSeconds / 60 }))}>
+                  <CartesianGrid stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    domain={["dataMin - 0.3", "dataMax + 0.3"]}
+                    tickFormatter={(v: number) => {
+                      const total = Math.round(v * 60);
+                      return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+                    }}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => {
+                      const total = Math.round(v * 60);
+                      return [`${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}/km`, "Pace"];
+                    }}
+                  />
+                  <Line type="monotone" dataKey="paceMin" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </section>
         )}

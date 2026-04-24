@@ -9,6 +9,7 @@ import { Role } from "../../types/enums";
 import { allowRoles, AuthenticatedRequest, requireAuth } from "../../middlewares/auth";
 import { extractResultFromText } from "../../services/certificate-parser";
 import { lookupResult } from "../../services/results-lookup";
+import { scrapeResult, scraperAvailableFor } from "../../services/results-scraper";
 import { prisma } from "../../prisma/client";
 
 export const importRouter = Router();
@@ -102,6 +103,13 @@ importRouter.post(
       }
     }
 
+    // 1) Tenta scraper real primeiro (se houver provider configurado)
+    if (scraperAvailableFor(parsed.data.raceCatalogId)) {
+      const scraped = await scrapeResult(parsed.data.raceCatalogId, { cpf, bib: parsed.data.bib });
+      if (scraped) return res.json({ ...scraped, _source: scraped.source });
+    }
+
+    // 2) Fallback: base mock
     const result = lookupResult(parsed.data.raceCatalogId, { cpf, bib: parsed.data.bib });
 
     if (!result) {
@@ -111,6 +119,6 @@ importRouter.post(
       });
     }
 
-    return res.json(result);
+    return res.json({ ...result, _source: "mock" });
   }
 );
