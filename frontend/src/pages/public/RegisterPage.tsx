@@ -27,7 +27,7 @@ export function RegisterPage() {
 
   const onSubmit = async (values: FormData) => {
     await createAccount(values);
-    navigate("/app/minhas-provas");
+    navigate("/app");
   };
 
   return (

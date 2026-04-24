@@ -8,6 +8,9 @@ import { RegisterPage } from "./pages/public/RegisterPage";
 import { MyRacesPage } from "./pages/runner/MyRacesPage";
 import { RunnerResultPage } from "./pages/runner/RunnerResultPage";
 import { ProfilePage } from "./pages/runner/ProfilePage";
+import { DashboardPage } from "./pages/runner/DashboardPage";
+import { ResultsPage } from "./pages/runner/ResultsPage";
+import { NewResultPage } from "./pages/runner/NewResultPage";
 import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminEventsPage } from "./pages/admin/AdminEventsPage";
@@ -27,6 +30,30 @@ function App() {
       {/* Área do corredor */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      <Route
+        path="/app"
+        element={
+          <ProtectedRoute role="corredor">
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/resultados"
+        element={
+          <ProtectedRoute role="corredor">
+            <ResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/resultados/novo"
+        element={
+          <ProtectedRoute role="corredor">
+            <NewResultPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/app/minhas-provas"
         element={

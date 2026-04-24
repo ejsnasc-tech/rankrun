@@ -28,6 +28,7 @@ function eventoApiParaCatalogo(e: EventoApi): CorridaCatalogo {
     titulo: e.title,
     cidade: cidade || e.location,
     uf: uf || "BR",
+    pais: "BR",
     data: e.date.slice(0, 10),
     distancias: [`${(e.distanceMeters / 1000).toFixed(0)} km`],
     organizador: "Plataforma corridasderua",

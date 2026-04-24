@@ -59,6 +59,13 @@ enum AppealStatus {
   REJECTED
 }
 
+enum ResultSource {
+  MANUAL
+  IMPORTED
+  MATCHED
+  TIMING
+}
+
 model User {
   id             String         @id @default(cuid())
   name           String
@@ -72,6 +79,7 @@ model User {
   organizedEvents Event[]       @relation("EventOrganizer")
   registrations  Registration[]
   medicalInfo    MedicalInfo?
+  results        Result[]
 }
 
 model Event {
@@ -189,5 +197,36 @@ model Appeal {
   description    String
   status         AppealStatus @default(OPEN)
   createdAt      DateTime     @default(now())
-  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+ 
+
+/// Resultado de corrida do usuário, independente da inscrição na plataforma.
+/// Permite ao corredor manter histórico de TODAS as provas que correu (na
+/// plataforma ou fora dela). raceCatalogId aponta para o slug do catálogo
+/// público quando aplicável.
+model Result {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  raceCatalogId   String?      // slug do catálogo (ex: "maratona-rio-2026"), se houver
+  raceName        String       // snapshot do nome da prova
+  raceDate        DateTime
+  raceCity        String?
+  raceUf          String?
+
+  distanceMeters  Int
+  netTimeSeconds  Int          // tempo líquido em segundos
+  grossTimeSeconds Int?
+  generalRank     Int?
+  categoryName    String?
+  categoryRank    Int?
+
+  certificateUrl  String?
+  source          ResultSource @default(MANUAL)
+  notes           String?
+  createdAt       DateTime     @default(now())
+
+  @@index([userId, raceDate])
+  @@index([userId, distanceMeters])
+} registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 }

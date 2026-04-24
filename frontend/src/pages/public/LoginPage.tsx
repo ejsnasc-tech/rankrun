@@ -32,7 +32,7 @@ export function LoginPage() {
         setError("Esta área é exclusiva para corredores. Use o acesso da empresa.");
         return;
       }
-      navigate("/app/minhas-provas");
+      navigate("/app");
     } catch {
       setError("E-mail ou senha inválidos.");
     }

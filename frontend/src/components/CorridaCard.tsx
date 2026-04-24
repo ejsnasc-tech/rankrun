@@ -44,7 +44,9 @@ export function CorridaCard({ corrida }: { corrida: CorridaCatalogo }) {
             {corrida.titulo}
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            {corrida.cidade} · {corrida.uf}
+            {corrida.cidade}
+            {corrida.uf ? ` · ${corrida.uf}` : ""}
+            {corrida.pais && corrida.pais !== "BR" ? ` · ${corrida.pais}` : ""}
           </p>
         </div>
       </div>

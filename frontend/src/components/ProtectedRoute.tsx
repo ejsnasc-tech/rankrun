@@ -24,7 +24,7 @@ export function ProtectedRoute({ children, role }: { children: ReactNode; role?:
       return <Navigate to="/admin" replace />;
     }
     if (user.role === "corredor") {
-      return <Navigate to="/app/minhas-provas" replace />;
+      return <Navigate to="/app" replace />;
     }
     return <Navigate to="/" replace />;
   }

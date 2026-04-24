@@ -1,0 +1,60 @@
+name: Atualizar catálogo de corridas
+
+# Roda toda segunda-feira às 11:00 UTC (08:00 BRT) e abre PR com:
+# - corridas com data passada marcadas como "encerradas"
+# - relatório de URLs oficiais que retornaram erro (HTTP != 2xx/3xx)
+#
+# Também pode ser disparado manualmente via Actions tab.
+
+on:
+  schedule:
+    - cron: "0 11 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Marcar provas passadas como encerradas + verificar URLs
+        id: atualizar
+        run: node scripts/atualizar-catalogo.mjs
+        env:
+          CATALOGO_PATH: frontend/src/data/catalogo-corridas.json
+
+      - name: Criar Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/atualizar-catalogo-${{ github.run_number }}
+          delete-branch: true
+          commit-message: "chore(catalogo): atualização semanal automática"
+          title: "chore(catálogo): revisão semanal — semana ${{ github.run_number }}"
+          body: |
+            ## Atualização semanal do catálogo de corridas
+
+            Este PR foi aberto automaticamente pelo workflow `.github/workflows/atualizar-catalogo.yml`.
+
+            ### Mudanças automáticas
+            - Provas com data anterior a hoje foram marcadas como `encerradas`.
+
+            ### Revisão humana necessária
+            Veja o output do step "Marcar provas passadas..." para a lista de
+            URLs oficiais que retornaram erro e provas que precisam ter status
+            atualizado de `em-breve` para `abertas` (ou data confirmada).
+
+            **Antes de fazer merge:**
+            - [ ] Confirmar datas de 2026 das provas em `em-breve`
+            - [ ] Adicionar novas corridas que abriram inscrição esta semana
+            - [ ] Conferir links que falharam
+          labels: |
+            catálogo
+            automated
