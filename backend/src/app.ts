@@ -15,6 +15,7 @@ import { resultsRouter } from "./modules/results/results.routes";
 import { medicalRouter } from "./modules/medical/medical.routes";
 import { appealsRouter } from "./modules/appeals/appeals.routes";
 import { myResultsRouter } from "./modules/my-results/my-results.routes";
+import { importRouter } from "./modules/my-results/import.routes";
 
 export function createApp() {
   const app = express();
@@ -41,6 +42,7 @@ export function createApp() {
   app.use("/payments", paymentsRouter);
   app.use("/timing", timingRouter);
   app.use("/appeals", appealsRouter);
+  app.use("/me/results", importRouter);
   app.use("/me/results", myResultsRouter);
 
   // Routes whose paths span multiple prefixes are mounted at root
