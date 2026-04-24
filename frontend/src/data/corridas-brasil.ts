@@ -1,7 +1,11 @@
 // Catálogo curado de corridas de rua brasileiras tradicionais.
 // Usado como fallback quando o backend não tem eventos publicados ainda.
-// Datas são estimativas baseadas no calendário típico de cada prova; confirme
-// sempre no site oficial do organizador antes de se inscrever.
+//
+// IMPORTANTE: As provas são reais e tradicionais (acontecem todo ano), mas
+// as DATAS de 2026 são ESTIMADAS com base no calendário típico de cada
+// edição. O `linkOficial` aponta sempre para o site oficial do organizador
+// (mais estável que uma URL específica de inscrição que muda a cada edição).
+// Confirme sempre data e abertura de inscrição no site oficial.
 
 export type StatusInscricao = "abertas" | "em-breve" | "encerradas";
 
@@ -14,6 +18,7 @@ export type CorridaCatalogo = {
   distancias: string[]; // ex: ["5 km", "10 km", "21 km"]
   organizador: string;
   status: StatusInscricao;
+  linkOficial: string;
   destaque?: boolean;
   observacao?: string;
 };
@@ -29,6 +34,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     organizador: "Yescom / Gazeta Esportiva",
     status: "em-breve",
     destaque: true,
+    linkOficial: "https://www.saosilvestre.com.br/",
     observacao: "Inscrições abrem normalmente em meados do ano.",
   },
   {
@@ -41,6 +47,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     organizador: "Yescom",
     status: "abertas",
     destaque: true,
+    linkOficial: "https://www.maratonadesaopaulo.com.br/",
   },
   {
     id: "maratona-rio-2026",
@@ -52,6 +59,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     organizador: "Spiridon",
     status: "abertas",
     destaque: true,
+    linkOficial: "https://www.maratonadorio.com.br/",
   },
   {
     id: "meia-floripa-2026",
@@ -62,6 +70,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["6 km", "12 km", "21 km"],
     organizador: "Unimed Floripa",
     status: "abertas",
+    linkOficial: "https://www.meiamaratonadefloripa.com.br/",
   },
   {
     id: "volta-pampulha-2026",
@@ -72,6 +81,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["18 km"],
     organizador: "Prefeitura de BH",
     status: "em-breve",
+    linkOficial: "https://www.voltadapampulha.com.br/",
   },
   {
     id: "maratona-poa-2026",
@@ -82,6 +92,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km", "21 km", "42 km"],
     organizador: "Federação Gaúcha",
     status: "abertas",
+    linkOficial: "https://www.maratonadeportoalegre.com.br/",
   },
   {
     id: "circuito-caixa-aracaju-2026",
@@ -93,6 +104,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     organizador: "Track&Field",
     status: "em-breve",
     destaque: true,
+    linkOficial: "https://www.tfsports.com.br/circuito-das-estacoes",
   },
   {
     id: "corrida-cidade-aracaju-2026",
@@ -103,6 +115,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km"],
     organizador: "Prefeitura de Aracaju",
     status: "encerradas",
+    linkOficial: "https://www.aracaju.se.gov.br/",
   },
   {
     id: "meia-itabaiana-2026",
@@ -113,6 +126,8 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km", "21 km"],
     organizador: "FASE",
     status: "abertas",
+    linkOficial: "https://www.minhasinscricoes.com.br/",
+    observacao: "Inscrições normalmente via Minhas Inscrições.",
   },
   {
     id: "circuito-salvador-2026",
@@ -123,6 +138,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km"],
     organizador: "Track&Field",
     status: "abertas",
+    linkOficial: "https://www.tfsports.com.br/circuito-das-estacoes",
   },
   {
     id: "maratona-fortaleza-2026",
@@ -133,6 +149,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km", "21 km", "42 km"],
     organizador: "Setur Ceará",
     status: "em-breve",
+    linkOficial: "https://www.maratonadefortaleza.com.br/",
   },
   {
     id: "meia-recife-2026",
@@ -143,6 +160,7 @@ export const corridasBrasil: CorridaCatalogo[] = [
     distancias: ["5 km", "10 km", "21 km"],
     organizador: "Prefeitura do Recife",
     status: "abertas",
+    linkOficial: "https://www2.recife.pe.gov.br/",
   },
 ];
 

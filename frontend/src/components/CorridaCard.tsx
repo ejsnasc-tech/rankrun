@@ -19,9 +19,20 @@ function formatarData(iso: string) {
 export function CorridaCard({ corrida }: { corrida: CorridaCatalogo }) {
   const { dia, mes, ano } = formatarData(corrida.data);
   const status = statusLabels[corrida.status];
+  const podeInscrever = corrida.status === "abertas";
+  const ctaLabel = podeInscrever
+    ? "Ir para inscrição →"
+    : corrida.status === "em-breve"
+      ? "Ver site oficial →"
+      : "Edição encerrada";
 
   return (
-    <article className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <a
+      href={corrida.linkOficial}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
+    >
       <div className="flex items-start gap-4">
         <div className="flex h-16 w-16 flex-col items-center justify-center rounded-lg bg-orange-50 text-orange-600">
           <span className="text-xs font-semibold uppercase">{mes}</span>
@@ -29,7 +40,9 @@ export function CorridaCard({ corrida }: { corrida: CorridaCatalogo }) {
           <span className="text-[10px] text-orange-500">{ano}</span>
         </div>
         <div className="flex-1">
-          <h3 className="text-base font-semibold leading-tight text-gray-900">{corrida.titulo}</h3>
+          <h3 className="text-base font-semibold leading-tight text-gray-900 group-hover:text-orange-600">
+            {corrida.titulo}
+          </h3>
           <p className="mt-1 text-sm text-gray-600">
             {corrida.cidade} · {corrida.uf}
           </p>
@@ -59,6 +72,18 @@ export function CorridaCard({ corrida }: { corrida: CorridaCatalogo }) {
       {corrida.observacao ? (
         <p className="mt-2 text-xs text-gray-500">{corrida.observacao}</p>
       ) : null}
-    </article>
+
+      <p
+        className={`mt-3 text-sm font-medium ${
+          podeInscrever
+            ? "text-orange-600 group-hover:text-orange-700"
+            : corrida.status === "em-breve"
+              ? "text-amber-700"
+              : "text-gray-400"
+        }`}
+      >
+        {ctaLabel}
+      </p>
+    </a>
   );
 }

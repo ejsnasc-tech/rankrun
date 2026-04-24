@@ -32,6 +32,7 @@ function eventoApiParaCatalogo(e: EventoApi): CorridaCatalogo {
     distancias: [`${(e.distanceMeters / 1000).toFixed(0)} km`],
     organizador: "Plataforma corridasderua",
     status: "abertas",
+    linkOficial: `/eventos/${e.slug}`,
     destaque: true,
   };
 }
