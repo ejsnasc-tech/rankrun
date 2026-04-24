@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Router } from "express";
-import { CheckpointType, Role } from "@prisma/client";
+import { CheckpointType, Role } from "../../types/enums";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";
 import { allowRoles, requireAuth } from "../../middlewares/auth";

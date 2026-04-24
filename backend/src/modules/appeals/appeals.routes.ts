@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Router } from "express";
-import { AppealStatus } from "@prisma/client";
+import { AppealStatus } from "../../types/enums";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";
 import { requireAuth } from "../../middlewares/auth";

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Router } from "express";
-import { Gender, Role } from "@prisma/client";
+import { Gender, Role } from "../../types/enums";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";
 import { allowRoles, requireAuth } from "../../middlewares/auth";

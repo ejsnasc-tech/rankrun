@@ -1,4 +1,5 @@
-import { PrismaClient, EventStatus, Gender, RegistrationStatus, PaymentStatus, CheckpointType, ResultStatus, Role } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import { EventStatus, Gender, RegistrationStatus, PaymentStatus, CheckpointType, ResultStatus, Role } from "../src/types/enums";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -123,7 +124,7 @@ async function main() {
       amount: 89.9,
       status: PaymentStatus.PAID,
       transactionId: "seed_tx",
-      gatewayPayload: { source: "seed" },
+      gatewayPayload: JSON.stringify({ source: "seed" }),
     },
   });
 
@@ -151,7 +152,7 @@ async function main() {
       netTime: new Date(seedSplits[seedSplits.length - 1].timestamp),
       generalRank: 1,
       categoryRank: 1,
-      splits: seedSplits,
+      splits: JSON.stringify(seedSplits),
     },
     create: {
       registrationId: registration.id,
@@ -162,7 +163,7 @@ async function main() {
       netTime: new Date(seedSplits[seedSplits.length - 1].timestamp),
       generalRank: 1,
       categoryRank: 1,
-      splits: seedSplits,
+      splits: JSON.stringify(seedSplits),
     },
   });
 }

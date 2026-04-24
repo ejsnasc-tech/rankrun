@@ -3,83 +3,36 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  admin
-  operador
-  corredor
-}
-
-enum EventStatus {
-  DRAFT
-  PUBLISHED
-  CLOSED
-  FINISHED
-}
-
-enum Gender {
-  M
-  F
-  ANY
-}
-
-enum RegistrationStatus {
-  PENDING
-  CONFIRMED
-  CHECKED_IN
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-}
-
-enum CheckpointType {
-  START
-  SPLIT
-  FINISH
-}
-
-enum ResultStatus {
-  FINISHED
-  DNF
-  DNS
-  DSQ
-}
-
-enum AppealStatus {
-  OPEN
-  RESOLVED
-  REJECTED
-}
-
-enum ResultSource {
-  MANUAL
-  IMPORTED
-  MATCHED
-  TIMING
-}
+// Enums removed: SQLite via Prisma does not support enums.
+// String literal types are mirrored in src/types/enums.ts
+//   Role: admin | operador | corredor
+//   EventStatus: DRAFT | PUBLISHED | CLOSED | FINISHED
+//   Gender: M | F | ANY
+//   RegistrationStatus: PENDING | CONFIRMED | CHECKED_IN | CANCELLED
+//   PaymentStatus: PENDING | PAID | FAILED | REFUNDED
+//   CheckpointType: START | SPLIT | FINISH
+//   ResultStatus: FINISHED | DNF | DNS | DSQ
+//   AppealStatus: OPEN | RESOLVED | REJECTED
+//   ResultSource: MANUAL | IMPORTED | MATCHED | TIMING
 
 model User {
-  id             String         @id @default(cuid())
-  name           String
-  email          String         @unique
-  passwordHash   String
-  role           Role           @default(corredor)
-  phone          String?
-  document       String?
-  birthDate      DateTime?
-  createdAt      DateTime       @default(now())
-  organizedEvents Event[]       @relation("EventOrganizer")
-  registrations  Registration[]
-  medicalInfo    MedicalInfo?
-  results        Result[]
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  passwordHash    String
+  role            String         @default("corredor")
+  phone           String?
+  document        String?
+  birthDate       DateTime?
+  createdAt       DateTime       @default(now())
+  organizedEvents Event[]        @relation("EventOrganizer")
+  registrations   Registration[]
+  medicalInfo     MedicalInfo?
+  results         Result[]
 }
 
 model Event {
@@ -91,7 +44,7 @@ model Event {
   distanceMeters Int
   slots          Int
   description    String?
-  status         EventStatus    @default(DRAFT)
+  status         String         @default("DRAFT")
   createdAt      DateTime       @default(now())
   organizerId    String
   organizer      User           @relation("EventOrganizer", fields: [organizerId], references: [id])
@@ -101,34 +54,34 @@ model Event {
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  eventId   String
-  name      String
-  minAge    Int
-  maxAge    Int
-  gender    Gender    @default(ANY)
-  price     Decimal   @db.Decimal(10, 2)
-  maxSlots  Int?
-  event     Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id            String         @id @default(cuid())
+  eventId       String
+  name          String
+  minAge        Int
+  maxAge        Int
+  gender        String         @default("ANY")
+  price         Decimal
+  maxSlots      Int?
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   registrations Registration[]
 }
 
 model Registration {
-  id          String             @id @default(cuid())
-  userId      String
-  eventId     String
-  categoryId  String
-  bibNumber   Int?
-  status      RegistrationStatus @default(PENDING)
-  paymentId   String?
-  createdAt   DateTime           @default(now())
-  user        User               @relation(fields: [userId], references: [id])
-  event       Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  category    Category           @relation(fields: [categoryId], references: [id])
-  payment     Payment?
+  id           String        @id @default(cuid())
+  userId       String
+  eventId      String
+  categoryId   String
+  bibNumber    Int?
+  status       String        @default("PENDING")
+  paymentId    String?
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id])
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id])
+  payment      Payment?
   timingResult TimingResult?
-  certificate Certificate?
-  appeals     Appeal[]
+  certificate  Certificate?
+  appeals      Appeal[]
 
   @@unique([userId, eventId])
   @@unique([eventId, bibNumber])
@@ -138,38 +91,38 @@ model Payment {
   id             String       @id @default(cuid())
   registrationId String       @unique
   method         String
-  amount         Decimal      @db.Decimal(10, 2)
-  status         PaymentStatus @default(PENDING)
+  amount         Decimal
+  status         String       @default("PENDING")
   transactionId  String?
-  gatewayPayload Json?
+  gatewayPayload String?
   createdAt      DateTime     @default(now())
   registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 }
 
 model Checkpoint {
-  id      String         @id @default(cuid())
+  id      String @id @default(cuid())
   eventId String
   name    String
   kmMark  Float
-  type    CheckpointType
+  type    String
   order   Int
-  event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, order])
 }
 
 model TimingResult {
-  id            String       @id @default(cuid())
-  registrationId String      @unique
-  bibNumber     Int
-  chipId        String?
-  gunTime       DateTime?
-  netTime       DateTime?
-  splits        Json?
-  status        ResultStatus @default(DNS)
-  generalRank   Int?
-  categoryRank  Int?
-  registration  Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  id             String       @id @default(cuid())
+  registrationId String       @unique
+  bibNumber      Int
+  chipId         String?
+  gunTime        DateTime?
+  netTime        DateTime?
+  splits         String?
+  status         String       @default("DNS")
+  generalRank    Int?
+  categoryRank   Int?
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 }
 
 model Certificate {
@@ -181,52 +134,49 @@ model Certificate {
 }
 
 model MedicalInfo {
-  id                     String @id @default(cuid())
-  userId                 String @unique
-  allergies              String?
-  conditions             String?
-  emergencyContactName   String?
-  emergencyContactPhone  String?
-  user                   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  allergies             String?
+  conditions            String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Appeal {
-  id             String      @id @default(cuid())
+  id             String       @id @default(cuid())
   registrationId String
   type           String
   description    String
-  status         AppealStatus @default(OPEN)
+  status         String       @default("OPEN")
   createdAt      DateTime     @default(now())
- 
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+}
 
 /// Resultado de corrida do usuário, independente da inscrição na plataforma.
-/// Permite ao corredor manter histórico de TODAS as provas que correu (na
-/// plataforma ou fora dela). raceCatalogId aponta para o slug do catálogo
-/// público quando aplicável.
 model Result {
-  id              String       @id @default(cuid())
-  userId          String
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  raceCatalogId   String?      // slug do catálogo (ex: "maratona-rio-2026"), se houver
-  raceName        String       // snapshot do nome da prova
-  raceDate        DateTime
-  raceCity        String?
-  raceUf          String?
+  raceCatalogId    String?
+  raceName         String
+  raceDate         DateTime
+  raceCity         String?
+  raceUf           String?
 
-  distanceMeters  Int
-  netTimeSeconds  Int          // tempo líquido em segundos
+  distanceMeters   Int
+  netTimeSeconds   Int
   grossTimeSeconds Int?
-  generalRank     Int?
-  categoryName    String?
-  categoryRank    Int?
+  generalRank      Int?
+  categoryName     String?
+  categoryRank     Int?
 
-  certificateUrl  String?
-  source          ResultSource @default(MANUAL)
-  notes           String?
-  createdAt       DateTime     @default(now())
+  certificateUrl   String?
+  source           String   @default("MANUAL")
+  notes            String?
+  createdAt        DateTime @default(now())
 
   @@index([userId, raceDate])
   @@index([userId, distanceMeters])
-} registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 }

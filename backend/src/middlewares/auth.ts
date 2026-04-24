@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { Role } from "@prisma/client";
+import { Role } from "../types/enums";
 
 export type AuthenticatedRequest = Request & {
   user?: {

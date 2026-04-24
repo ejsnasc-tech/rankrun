@@ -2,7 +2,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Role } from "@prisma/client";
+import { Role } from "../../types/enums";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";
 import { AuthenticatedRequest, requireAuth } from "../../middlewares/auth";

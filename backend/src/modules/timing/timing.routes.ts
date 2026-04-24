@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Router } from "express";
-import { CheckpointType, ResultStatus } from "@prisma/client";
+import { CheckpointType, ResultStatus } from "../../types/enums";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";
 import { calculateSplitMetrics, SplitPayload } from "../../utils/time";

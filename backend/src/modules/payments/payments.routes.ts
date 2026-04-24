@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Router } from "express";
-import { PaymentStatus, RegistrationStatus } from "@prisma/client";
+import { PaymentStatus, RegistrationStatus } from "../../types/enums";
 import Stripe from "stripe";
 import { z } from "zod";
 import { prisma } from "../../prisma/client";

@@ -3,7 +3,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import PDFDocument from "pdfkit";
-import { ResultStatus } from "@prisma/client";
+import { ResultStatus } from "../../types/enums";
 import { prisma } from "../../prisma/client";
 import { formatDuration, formatPace, SplitPayload } from "../../utils/time";
 
