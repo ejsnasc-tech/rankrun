@@ -5,6 +5,7 @@ import { EventsPage } from "./pages/public/EventsPage";
 import { EventDetailsPage } from "./pages/public/EventDetailsPage";
 import { LoginPage } from "./pages/public/LoginPage";
 import { RegisterPage } from "./pages/public/RegisterPage";
+import { AthleteProfilePage } from "./pages/public/AthleteProfilePage";
 import { MyRacesPage } from "./pages/runner/MyRacesPage";
 import { RunnerResultPage } from "./pages/runner/RunnerResultPage";
 import { ProfilePage } from "./pages/runner/ProfilePage";
@@ -26,6 +27,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/eventos" element={<EventsPage />} />
       <Route path="/eventos/:slug" element={<EventDetailsPage />} />
+      <Route path="/atleta/:slug" element={<AthleteProfilePage />} />
 
       {/* Área do corredor */}
       <Route path="/login" element={<LoginPage />} />

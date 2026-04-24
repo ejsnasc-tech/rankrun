@@ -28,6 +28,11 @@ model User {
   phone           String?
   document        String?
   birthDate       DateTime?
+  slug            String?        @unique
+  bio             String?
+  city            String?
+  uf              String?
+  publicProfile   Boolean        @default(true)
   createdAt       DateTime       @default(now())
   organizedEvents Event[]        @relation("EventOrganizer")
   registrations   Registration[]

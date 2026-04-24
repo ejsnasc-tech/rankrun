@@ -24,7 +24,13 @@ async function main() {
 
   const corredor = await prisma.user.upsert({
     where: { email: "corredor@teste.com" },
-    update: {},
+    update: {
+      slug: "corredor-teste",
+      bio: "Corredor amador. Buscando o sub-3:30 na maratona.",
+      city: "Aracaju",
+      uf: "SE",
+      publicProfile: true,
+    },
     create: {
       name: "Corredor Teste",
       email: "corredor@teste.com",
@@ -33,6 +39,11 @@ async function main() {
       birthDate: new Date("1994-06-15"),
       document: "11111111111",
       phone: "11911112222",
+      slug: "corredor-teste",
+      bio: "Corredor amador. Buscando o sub-3:30 na maratona.",
+      city: "Aracaju",
+      uf: "SE",
+      publicProfile: true,
     },
   });
 

@@ -16,6 +16,7 @@ import { medicalRouter } from "./modules/medical/medical.routes";
 import { appealsRouter } from "./modules/appeals/appeals.routes";
 import { myResultsRouter } from "./modules/my-results/my-results.routes";
 import { importRouter } from "./modules/my-results/import.routes";
+import { publicProfilesRouter } from "./modules/public-profiles/public-profiles.routes";
 
 export function createApp() {
   const app = express();
@@ -44,6 +45,8 @@ export function createApp() {
   app.use("/appeals", appealsRouter);
   app.use("/me/results", importRouter);
   app.use("/me/results", myResultsRouter);
+  app.use("/public", publicProfilesRouter);
+  app.use(publicProfilesRouter); // monta /me/profile no root
 
   // Routes whose paths span multiple prefixes are mounted at root
   app.use(categoriesRouter);
