@@ -18,7 +18,7 @@ type User = {
 type AuthContextData = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: {
     name: string;
     email: string;
@@ -26,9 +26,9 @@ type AuthContextData = {
     birthDate?: string;
     document?: string;
     phone?: string;
-  }) => Promise<void>;
+  }) => Promise<User>;
   logout: () => void;
-  refreshMe: () => Promise<void>;
+  refreshMe: () => Promise<User | null>;
 };
 
 const AuthContext = createContext<AuthContextData | undefined>(undefined);
@@ -37,20 +37,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshMe = async () => {
+  const refreshMe = async (): Promise<User | null> => {
     const token = localStorage.getItem("token");
     if (!token) {
       setUser(null);
       setLoading(false);
-      return;
+      return null;
     }
 
     try {
       const { data } = await api.get<User>("/auth/me");
       setUser(data);
+      return data;
     } catch {
       localStorage.removeItem("token");
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -60,10 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshMe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const { data } = await api.post<{ token: string }>("/auth/login", { email, password });
     localStorage.setItem("token", data.token);
-    await refreshMe();
+    const me = await refreshMe();
+    if (!me) {
+      throw new Error("Falha ao obter perfil após login.");
+    }
+    return me;
   };
 
   const register = async (data: {
@@ -73,9 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     birthDate?: string;
     document?: string;
     phone?: string;
-  }) => {
+  }): Promise<User> => {
     await api.post("/auth/register", data);
-    await login(data.email, data.password);
+    return login(data.email, data.password);
   };
 
   const logout = () => {

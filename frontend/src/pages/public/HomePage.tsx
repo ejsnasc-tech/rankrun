@@ -9,16 +9,52 @@ export function HomePage() {
         <section className="rounded-lg bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-gray-900">Gerencie corridas de rua com simplicidade</h1>
           <p className="mt-3 text-gray-600">
-            Área da empresa para organizar eventos e área do corredor para acompanhar colocação, tempo bruto/líquido e marcas por km.
+            Plataforma para corredores acompanharem suas provas e para empresas organizarem eventos com inscrição,
+            cronometragem e relatórios.
           </p>
-          <div className="mt-6 flex gap-3">
-            <Link to="/eventos" className="rounded bg-orange-500 px-4 py-2 text-white">
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/eventos" className="rounded bg-orange-500 px-4 py-2 text-white hover:bg-orange-600">
               Ver eventos
             </Link>
-            <Link to="/registro" className="rounded border border-orange-500 px-4 py-2 text-orange-500">
+            <Link to="/registro" className="rounded border border-orange-500 px-4 py-2 text-orange-500 hover:bg-orange-50">
               Criar conta
             </Link>
           </div>
+        </section>
+
+        <section className="mt-8 grid gap-4 md:grid-cols-2">
+          <article className="flex flex-col rounded-lg border border-orange-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-600">Para corredores</p>
+            <h2 className="mt-1 text-xl font-semibold text-gray-900">Sou corredor</h2>
+            <p className="mt-2 flex-1 text-sm text-gray-600">
+              Inscreva-se em provas, acompanhe sua colocação geral e por categoria, tempo bruto/líquido,
+              splits por km e baixe seu certificado.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Link to="/login" className="rounded bg-orange-500 px-4 py-2 text-sm text-white hover:bg-orange-600">
+                Entrar
+              </Link>
+              <Link to="/registro" className="rounded border border-orange-500 px-4 py-2 text-sm text-orange-500 hover:bg-orange-50">
+                Criar conta
+              </Link>
+            </div>
+          </article>
+
+          <article className="flex flex-col rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-orange-400">Para organizadores</p>
+            <h2 className="mt-1 text-xl font-semibold">Sou organizador</h2>
+            <p className="mt-2 flex-1 text-sm text-slate-300">
+              Gerencie eventos, categorias, inscrições, bibs, check-in, painel ao vivo da prova e relatórios financeiros.
+            </p>
+            <div className="mt-4">
+              <Link
+                to="/admin/login"
+                className="inline-block rounded bg-orange-400 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-orange-300"
+              >
+                Acessar área da empresa
+              </Link>
+            </div>
+          </article>
         </section>
       </main>
     </div>

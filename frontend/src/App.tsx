@@ -8,6 +8,7 @@ import { RegisterPage } from "./pages/public/RegisterPage";
 import { MyRacesPage } from "./pages/runner/MyRacesPage";
 import { RunnerResultPage } from "./pages/runner/RunnerResultPage";
 import { ProfilePage } from "./pages/runner/ProfilePage";
+import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminEventsPage } from "./pages/admin/AdminEventsPage";
 import { AdminEventDetailPage } from "./pages/admin/AdminEventDetailPage";
@@ -18,12 +19,14 @@ import { AdminReportsPage } from "./pages/admin/AdminReportsPage";
 function App() {
   return (
     <Routes>
+      {/* Área pública */}
       <Route path="/" element={<HomePage />} />
       <Route path="/eventos" element={<EventsPage />} />
       <Route path="/eventos/:slug" element={<EventDetailsPage />} />
+
+      {/* Área do corredor */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
-
       <Route
         path="/app/minhas-provas"
         element={
@@ -49,6 +52,8 @@ function App() {
         }
       />
 
+      {/* Área da empresa (admin) */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
       <Route
         path="/admin"
         element={
