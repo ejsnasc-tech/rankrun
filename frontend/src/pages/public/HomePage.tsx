@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
 import { Header } from "../../components/Header";
+import { CorridaCard } from "../../components/CorridaCard";
+import { corridasBrasil, ordenarPorData } from "../../data/corridas-brasil";
 
 export function HomePage() {
+  const destaques = ordenarPorData(
+    corridasBrasil.filter((c) => c.status !== "encerradas"),
+  ).slice(0, 6);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header area="public" />
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <section className="rounded-lg bg-white p-8 shadow-sm">
           <h1 className="text-3xl font-bold text-gray-900">Gerencie corridas de rua com simplicidade</h1>
           <p className="mt-3 text-gray-600">
@@ -22,7 +28,41 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-2">
+        <section className="mt-10">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-orange-600">
+                Calendário nacional
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                Próximas corridas no Brasil
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                Inscrições abertas e provas em breve em todo o país.
+              </p>
+            </div>
+            <Link
+              to="/eventos"
+              className="hidden text-sm font-medium text-orange-600 hover:text-orange-700 sm:inline"
+            >
+              Ver todas →
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {destaques.map((c) => (
+              <CorridaCard key={c.id} corrida={c} />
+            ))}
+          </div>
+
+          <div className="mt-4 text-center sm:hidden">
+            <Link to="/eventos" className="text-sm font-medium text-orange-600">
+              Ver todas as corridas →
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-12 grid gap-4 md:grid-cols-2">
           <article className="flex flex-col rounded-lg border border-orange-200 bg-white p-6 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wide text-orange-600">Para corredores</p>
             <h2 className="mt-1 text-xl font-semibold text-gray-900">Sou corredor</h2>
