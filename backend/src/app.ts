@@ -8,6 +8,8 @@ import { authRouter } from "./modules/auth/auth.routes";
 import { myResultsRouter } from "./modules/my-results/my-results.routes";
 import { importRouter } from "./modules/my-results/import.routes";
 import { publicProfilesRouter } from "./modules/public-profiles/public-profiles.routes";
+import { workoutsRouter } from "./modules/workouts/workouts.routes";
+import { stravaRouter } from "./modules/strava/strava.routes";
 
 export function createApp() {
   const app = express();
@@ -31,8 +33,10 @@ export function createApp() {
   app.use("/auth", authRouter);
   app.use("/me/results", importRouter);
   app.use("/me/results", myResultsRouter);
+  app.use("/me/workouts", workoutsRouter);
   app.use("/public", publicProfilesRouter);
   app.use(publicProfilesRouter); // monta /me/profile no root
+  app.use(stravaRouter); // /me/strava/* e /auth/strava/callback
 
   app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     // eslint-disable-next-line no-console

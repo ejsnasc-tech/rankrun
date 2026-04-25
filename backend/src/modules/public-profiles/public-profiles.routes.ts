@@ -214,11 +214,26 @@ publicProfilesRouter.get("/atletas/:slug", async (req, res) => {
     .sort((a, b) => a.month.localeCompare(b.month))
     .slice(-24);
 
+  // Treinos dos últimos 30 dias (privacidade: total agregado, não detalhes)
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+  const recentWorkouts = await prisma.workout.findMany({
+    where: { userId: user.id, startedAt: { gte: since } },
+    select: { distanceMeters: true, movingSeconds: true, source: true },
+  });
+  const trainingLast30 = {
+    workouts: recentWorkouts.length,
+    km: Math.round(recentWorkouts.reduce((a, w) => a + w.distanceMeters / 1000, 0) * 10) / 10,
+    hours: Math.round((recentWorkouts.reduce((a, w) => a + w.movingSeconds, 0) / 3600) * 10) / 10,
+    stravaConnected: recentWorkouts.some((w) => w.source === "STRAVA"),
+  };
+
   return res.json({
     user: { name: user.name, bio: user.bio, city: user.city, uf: user.uf, slug: user.slug, since: user.createdAt },
     stats: { totalRaces, totalKm, prs },
     badges,
     evolucao,
+    trainingLast30,
     results,
   });
 });

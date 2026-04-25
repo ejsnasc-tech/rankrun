@@ -11,6 +11,7 @@ import { ProfilePage } from "./pages/runner/ProfilePage";
 import { DashboardPage } from "./pages/runner/DashboardPage";
 import { ResultsPage } from "./pages/runner/ResultsPage";
 import { NewResultPage } from "./pages/runner/NewResultPage";
+import { WorkoutsPage } from "./pages/runner/WorkoutsPage";
 
 function App() {
   return (
@@ -46,6 +47,14 @@ function App() {
         element={
           <ProtectedRoute role="corredor">
             <NewResultPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/app/treinos"
+        element={
+          <ProtectedRoute role="corredor">
+            <WorkoutsPage />
           </ProtectedRoute>
         }
       />

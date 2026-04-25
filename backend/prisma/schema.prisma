@@ -12,21 +12,54 @@ datasource db {
 // ResultSource: MANUAL | IMPORTED | MATCHED | TIMING | LATEMP
 
 model User {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String
-  email         String   @unique
+  email         String    @unique
   passwordHash  String
-  role          String   @default("corredor")
+  role          String    @default("corredor")
   phone         String?
   document      String?
   birthDate     DateTime?
-  slug          String?  @unique
+  slug          String?   @unique
   bio           String?
   city          String?
   uf            String?
-  publicProfile Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  results       Result[]
+  publicProfile Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  // Integração Strava (opcional)
+  stravaAthleteId    String?
+  stravaAccessToken  String?
+  stravaRefreshToken String?
+  stravaExpiresAt    DateTime?
+  stravaConnectedAt  DateTime?
+  stravaLastSyncAt   DateTime?
+
+  results  Result[]
+  workouts Workout[]
+}
+
+/// Treino registrado pelo atleta (manual ou importado de fonte externa).
+model Workout {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  source          String   @default("MANUAL") // MANUAL | STRAVA | GARMIN
+  externalId      String?  // id no provider (ex.: Strava activity id)
+
+  type            String   @default("RUN") // RUN | RIDE | SWIM | WALK | OTHER
+  name            String?
+  startedAt       DateTime
+  distanceMeters  Int      @default(0)
+  movingSeconds   Int      @default(0)
+  elevationGain   Float?
+  averageHeartRate Float?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, source, externalId])
+  @@index([userId, startedAt])
 }
 
 /// Resultado de corrida do usuário, registrado manualmente ou via scraper.

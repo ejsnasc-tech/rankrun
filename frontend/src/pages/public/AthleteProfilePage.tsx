@@ -33,6 +33,7 @@ interface Profile {
   stats: { totalRaces: number; totalKm: number; prs: PR[] };
   badges: Badge[];
   evolucao: { month: string; paceSeconds: number; km: number }[];
+  trainingLast30?: { workouts: number; km: number; hours: number; stravaConnected: boolean };
   results: ResultRow[];
 }
 
@@ -196,6 +197,30 @@ export function AthleteProfilePage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Treinos do mês */}
+        {data.trainingLast30 && data.trainingLast30.workouts > 0 && (
+          <section className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">Treinos dos últimos 30 dias</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-white p-4 text-center shadow-sm ring-1 ring-gray-100">
+                <p className="text-xs uppercase text-gray-500">Treinos</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{data.trainingLast30.workouts}</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 text-center shadow-sm ring-1 ring-gray-100">
+                <p className="text-xs uppercase text-gray-500">KM</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{data.trainingLast30.km}</p>
+              </div>
+              <div className="rounded-xl bg-white p-4 text-center shadow-sm ring-1 ring-gray-100">
+                <p className="text-xs uppercase text-gray-500">Horas</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{data.trainingLast30.hours}</p>
+              </div>
+            </div>
+            {data.trainingLast30.stravaConnected && (
+              <p className="mt-2 text-xs text-orange-600">⚡ Sincronizado com Strava</p>
+            )}
           </section>
         )}
 
