@@ -15,7 +15,6 @@ type NavItem = { to: string; label: string; end?: boolean };
 const runnerNav: NavItem[] = [
   { to: "/app", label: "Painel", end: true },
   { to: "/app/resultados", label: "Meus resultados" },
-  { to: "/app/minhas-provas", label: "Minhas inscrições" },
   { to: "/app/perfil", label: "Perfil" },
 ];
 

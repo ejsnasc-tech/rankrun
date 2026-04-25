@@ -5,15 +5,6 @@ import path from "node:path";
 import { rateLimit } from "express-rate-limit";
 
 import { authRouter } from "./modules/auth/auth.routes";
-import { eventsRouter } from "./modules/events/events.routes";
-import { categoriesRouter } from "./modules/categories/categories.routes";
-import { checkpointsRouter } from "./modules/checkpoints/checkpoints.routes";
-import { registrationsRouter } from "./modules/registrations/registrations.routes";
-import { paymentsRouter } from "./modules/payments/payments.routes";
-import { timingRouter } from "./modules/timing/timing.routes";
-import { resultsRouter } from "./modules/results/results.routes";
-import { medicalRouter } from "./modules/medical/medical.routes";
-import { appealsRouter } from "./modules/appeals/appeals.routes";
 import { myResultsRouter } from "./modules/my-results/my-results.routes";
 import { importRouter } from "./modules/my-results/import.routes";
 import { publicProfilesRouter } from "./modules/public-profiles/public-profiles.routes";
@@ -37,23 +28,11 @@ export function createApp() {
     res.json({ status: "ok" });
   });
 
-  // Routes mounted with their own prefixes
   app.use("/auth", authRouter);
-  app.use("/events", eventsRouter);
-  app.use("/payments", paymentsRouter);
-  app.use("/timing", timingRouter);
-  app.use("/appeals", appealsRouter);
   app.use("/me/results", importRouter);
   app.use("/me/results", myResultsRouter);
   app.use("/public", publicProfilesRouter);
   app.use(publicProfilesRouter); // monta /me/profile no root
-
-  // Routes whose paths span multiple prefixes are mounted at root
-  app.use(categoriesRouter);
-  app.use(checkpointsRouter);
-  app.use(registrationsRouter);
-  app.use(resultsRouter);
-  app.use(medicalRouter);
 
   app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     // eslint-disable-next-line no-console

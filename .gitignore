@@ -3,3 +3,5 @@
 **/.env
 coverage
 .DS_Store
+results-backup.json
+backend/results-backup.json

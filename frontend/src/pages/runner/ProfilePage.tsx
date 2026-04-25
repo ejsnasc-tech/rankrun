@@ -14,13 +14,6 @@ interface ProfileData {
   document: string | null;
 }
 
-interface MedicalForm {
-  allergies?: string;
-  conditions?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-}
-
 export function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -28,7 +21,6 @@ export function ProfilePage() {
   const [erro, setErro] = useState<string | null>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
-  const [medical, setMedical] = useState<MedicalForm>({});
 
   useEffect(() => {
     api
@@ -59,12 +51,6 @@ export function ProfilePage() {
     } finally {
       setSalvando(false);
     }
-  };
-
-  const onSaveMedical = async (e: FormEvent) => {
-    e.preventDefault();
-    await api.put("/me/medical-info", medical);
-    setOkMsg("Dados médicos atualizados.");
   };
 
   const profileUrl = profile?.slug ? `${window.location.origin}/atleta/${profile.slug}` : "";
@@ -199,22 +185,6 @@ export function ProfilePage() {
             </form>
           </section>
         )}
-
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Dados médicos (privados)</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Usados apenas para emergências em provas onde você está inscrito. Nunca aparecem na página pública.
-          </p>
-          <form onSubmit={onSaveMedical} className="mt-4 space-y-3">
-            <input onChange={(e) => setMedical({ ...medical, allergies: e.target.value })} className={inputCls} placeholder="Alergias" />
-            <input onChange={(e) => setMedical({ ...medical, conditions: e.target.value })} className={inputCls} placeholder="Condições médicas" />
-            <input onChange={(e) => setMedical({ ...medical, emergencyContactName: e.target.value })} className={inputCls} placeholder="Contato de emergência" />
-            <input onChange={(e) => setMedical({ ...medical, emergencyContactPhone: e.target.value })} className={inputCls} placeholder="Telefone de emergência" />
-            <button className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-              Salvar
-            </button>
-          </form>
-        </section>
       </main>
     </div>
   );

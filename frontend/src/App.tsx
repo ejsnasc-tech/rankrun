@@ -7,8 +7,6 @@ import { LoginPage } from "./pages/public/LoginPage";
 import { RegisterPage } from "./pages/public/RegisterPage";
 import { AthleteProfilePage } from "./pages/public/AthleteProfilePage";
 import { AthletesPage } from "./pages/public/AthletesPage";
-import { MyRacesPage } from "./pages/runner/MyRacesPage";
-import { RunnerResultPage } from "./pages/runner/RunnerResultPage";
 import { ProfilePage } from "./pages/runner/ProfilePage";
 import { DashboardPage } from "./pages/runner/DashboardPage";
 import { ResultsPage } from "./pages/runner/ResultsPage";
@@ -48,22 +46,6 @@ function App() {
         element={
           <ProtectedRoute role="corredor">
             <NewResultPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/minhas-provas"
-        element={
-          <ProtectedRoute role="corredor">
-            <MyRacesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/app/provas/:registrationId"
-        element={
-          <ProtectedRoute role="corredor">
-            <RunnerResultPage />
           </ProtectedRoute>
         }
       />

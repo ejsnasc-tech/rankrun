@@ -77,7 +77,6 @@ authRouter.post("/login", async (req, res) => {
 authRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.id },
-    include: { medicalInfo: true },
   });
   return res.json(user);
 });
