@@ -63,8 +63,8 @@ export function LoginPage() {
             <Link to="/registro" className="text-orange-600 hover:underline">
               Criar conta
             </Link>
-            <Link to="/admin/login" className="text-gray-500 hover:text-gray-700">
-              Sou organizador →
+            <Link to="/atletas" className="text-gray-500 hover:text-gray-700">
+              Ver atletas →
             </Link>
           </div>
         </form>

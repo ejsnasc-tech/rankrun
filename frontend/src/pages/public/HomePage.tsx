@@ -80,18 +80,18 @@ export function HomePage() {
             </div>
           </article>
 
-          <article className="flex flex-col rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-orange-400">Para organizadores</p>
-            <h2 className="mt-1 text-xl font-semibold">Sou organizador</h2>
-            <p className="mt-2 flex-1 text-sm text-slate-300">
-              Gerencie eventos, categorias, inscrições, bibs, check-in, painel ao vivo da prova e relatórios financeiros.
+          <article className="flex flex-col rounded-lg border border-indigo-200 bg-indigo-50 p-6 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-indigo-600">Comunidade</p>
+            <h2 className="mt-1 text-xl font-semibold text-gray-900">Conheça outros atletas</h2>
+            <p className="mt-2 flex-1 text-sm text-gray-700">
+              Veja perfis públicos, rankings por distância (5K, 10K, meia, maratona) e acompanhe a evolução de outros corredores.
             </p>
             <div className="mt-4">
               <Link
-                to="/admin/login"
-                className="inline-block rounded bg-orange-400 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-orange-300"
+                to="/atletas"
+                className="inline-block rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
               >
-                Acessar área da empresa
+                Ver atletas e rankings →
               </Link>
             </div>
           </article>

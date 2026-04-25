@@ -6,7 +6,7 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "operador" | "corredor";
+  role: "corredor" | "operador";
   medicalInfo?: {
     allergies?: string;
     conditions?: string;

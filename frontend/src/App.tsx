@@ -13,13 +13,6 @@ import { ProfilePage } from "./pages/runner/ProfilePage";
 import { DashboardPage } from "./pages/runner/DashboardPage";
 import { ResultsPage } from "./pages/runner/ResultsPage";
 import { NewResultPage } from "./pages/runner/NewResultPage";
-import { AdminLoginPage } from "./pages/admin/AdminLoginPage";
-import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
-import { AdminEventsPage } from "./pages/admin/AdminEventsPage";
-import { AdminEventDetailPage } from "./pages/admin/AdminEventDetailPage";
-import { AdminLivePanelPage } from "./pages/admin/AdminLivePanelPage";
-import { AdminBibsPage } from "./pages/admin/AdminBibsPage";
-import { AdminReportsPage } from "./pages/admin/AdminReportsPage";
 
 function App() {
   return (
@@ -79,57 +72,6 @@ function App() {
         element={
           <ProtectedRoute role="corredor">
             <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Área da empresa (admin) */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminDashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/eventos"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminEventsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/eventos/:id"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminEventDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/eventos/:id/painel-ao-vivo"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminLivePanelPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/eventos/:id/bibs"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminBibsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/relatorios"
-        element={
-          <ProtectedRoute role="admin">
-            <AdminReportsPage />
           </ProtectedRoute>
         }
       />
