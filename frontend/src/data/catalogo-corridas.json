@@ -1,6 +1,6 @@
 {
   "$schema": "./catalogo-corridas.schema.json",
-  "atualizadoEm": "2026-04-24",
+  "atualizadoEm": "2026-05-18",
   "fonte": "Curadoria manual + workflow semanal",
   "corridas": [
     {
@@ -67,7 +67,7 @@
         "21 km"
       ],
       "organizador": "Unimed Floripa",
-      "status": "abertas",
+      "status": "encerradas",
       "linkOficial": "https://www.meiamaratonadefloripa.com.br/"
     },
     {
