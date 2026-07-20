@@ -1,6 +1,6 @@
 {
   "$schema": "./catalogo-corridas.schema.json",
-  "atualizadoEm": "2026-04-24",
+  "atualizadoEm": "2026-07-20",
   "fonte": "Curadoria manual + workflow semanal",
   "corridas": [
     {
@@ -32,7 +32,7 @@
         "42 km"
       ],
       "organizador": "Yescom",
-      "status": "abertas",
+      "status": "encerradas",
       "destaque": true,
       "linkOficial": "https://www.maratonadesaopaulo.com.br/"
     },
@@ -50,7 +50,7 @@
         "42 km"
       ],
       "organizador": "Spiridon",
-      "status": "abertas",
+      "status": "encerradas",
       "destaque": true,
       "linkOficial": "https://www.maratonadorio.com.br/"
     },
@@ -67,7 +67,7 @@
         "21 km"
       ],
       "organizador": "Unimed Floripa",
-      "status": "abertas",
+      "status": "encerradas",
       "linkOficial": "https://www.meiamaratonadefloripa.com.br/"
     },
     {
@@ -98,7 +98,7 @@
         "42 km"
       ],
       "organizador": "Federação Gaúcha",
-      "status": "abertas",
+      "status": "encerradas",
       "linkOficial": "https://www.maratonadeportoalegre.com.br/"
     },
     {
@@ -161,7 +161,7 @@
         "10 km"
       ],
       "organizador": "Track&Field",
-      "status": "abertas",
+      "status": "encerradas",
       "linkOficial": "https://www.tfsports.com.br/circuito-das-estacoes"
     },
     {
@@ -194,7 +194,7 @@
         "21 km"
       ],
       "organizador": "Prefeitura do Recife",
-      "status": "abertas",
+      "status": "encerradas",
       "linkOficial": "https://www2.recife.pe.gov.br/"
     },
     {
