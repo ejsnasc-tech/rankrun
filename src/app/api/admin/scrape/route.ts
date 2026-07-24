@@ -388,26 +388,20 @@ export async function POST(req: NextRequest) {
       ).run();
     }
 
-    // Import results in batches
-    let importados = 0;
-    for (const a of atletas) {
-      if (!a.tempo_liquido_seg) continue;
-      await db.prepare(
-        `INSERT INTO resultados (prova_id, atleta_nome, atleta_uf, categoria, tempo_liquido_seg, tempo_bruto_seg, colocacao_geral)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        provaId,
-        a.atleta_nome ?? null,
-        a.atleta_uf ?? null,
-        a.categoria ?? null,
-        a.tempo_liquido_seg ?? null,
-        a.tempo_bruto_seg ?? null,
-        a.colocacao_geral ?? null,
-      ).run();
-      importados++;
+    // Batch insert all results (single D1 roundtrip — very fast)
+    const toInsert = atletas.filter(a => a.tempo_liquido_seg != null);
+    const SQL = `INSERT INTO resultados (prova_id, atleta_nome, atleta_uf, categoria, tempo_liquido_seg, tempo_bruto_seg, colocacao_geral) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+    // D1 batch is limited to 100 statements per call — chunk accordingly
+    const CHUNK = 100;
+    for (let i = 0; i < toInsert.length; i += CHUNK) {
+      const chunk = toInsert.slice(i, i + CHUNK);
+      await db.batch(chunk.map(a =>
+        db.prepare(SQL).bind(provaId, a.atleta_nome ?? null, a.atleta_uf ?? null, a.categoria ?? null, a.tempo_liquido_seg ?? null, a.tempo_bruto_seg ?? null, a.colocacao_geral ?? null)
+      ));
     }
 
-    return NextResponse.json({ ok: true, importados, prova_id: provaId, titulo: prova.titulo });
+    return NextResponse.json({ ok: true, importados: toInsert.length, prova_id: provaId, titulo: prova.titulo });
   } catch (e) {
     return NextResponse.json({ erro: String(e) }, { status: 500 });
   }
