@@ -221,8 +221,8 @@ async function fetchClaxXml(dataUrl: string, referer: string): Promise<string> {
   });
   if (xmlRes.ok) return xmlRes.text();
 
-  // Some servers (e.g. BrLive) block Cloudflare Worker IPs → try Wayback Machine
-  if (xmlRes.status === 406 || xmlRes.status === 403 || xmlRes.status === 451) {
+  // BrLive blocks Worker IPs (406), Sportschrono may remove old files (404) → Wayback Machine fallback
+  if (xmlRes.status === 404 || xmlRes.status === 403 || xmlRes.status === 406 || xmlRes.status === 451) {
     const availRes = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(dataUrl)}`);
     if (availRes.ok) {
       const avail = await availRes.json() as { archived_snapshots?: { closest?: { available?: boolean; url?: string } } };
