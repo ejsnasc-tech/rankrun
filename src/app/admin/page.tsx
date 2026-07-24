@@ -116,6 +116,8 @@ export default function AdminPage() {
           <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 space-y-1">
             <div>✅ <strong>Racezone:</strong> <code>https://resultados.racezone.com.br/sportschrono/#/nome-da-corrida</code></div>
             <div>✅ <strong>o2corre:</strong> <code>https://www.o2corre.com.br/resultado/40209/</code></div>
+            <div>✅ <strong>ChipBrasil / BrLive:</strong> <code>https://brlive.info/brlive/g-live.html?f=resultados/...</code></div>
+            <div>✅ <strong>Sportschrono (clax):</strong> <code>https://www.sportschrono.com.br/resultados/g-live.html?f=...</code></div>
           </div>
           <input required name="url" type="url" placeholder="https://resultados.racezone.com.br/..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">

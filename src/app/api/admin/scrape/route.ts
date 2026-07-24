@@ -217,7 +217,9 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
   if (!fMatch) throw new Error("URL do clax inválida — esperado ?f=...clax");
   const fPath = decodeURIComponent(fMatch[1]); // evento/2025/SLUG/SLUG.clax
 
-  const baseUrl = gliveUrl.match(/^(https?:\/\/[^/]+\/resultados\/)/)?.[1]
+  // Extract directory of g-live.html to build data URL
+  // e.g. https://brlive.info/brlive/g-live.html → https://brlive.info/brlive/
+  const baseUrl = gliveUrl.match(/^(https?:\/\/.+\/)g-live\.html/i)?.[1]
     ?? "https://www.sportschrono.com.br/resultados/";
   const dataUrl = baseUrl + fPath;
 
@@ -333,9 +335,10 @@ export async function POST(req: NextRequest) {
     } else if (url.includes("o2corre.com.br") || url.includes("activodeporte")) {
       scraped = await scrapeActivo(url);
     } else if (url.includes("g-live.html") || url.includes(".clax")) {
+      // Handles Sportschrono, BrLive (ChipBrasil), and any other ClaxInfo-based platform
       scraped = await scrapeClax(url, titulo);
     } else {
-      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br, sportschrono.com.br" }, { status: 400 });
+      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br, brlive.info (ChipBrasil), sportschrono.com.br" }, { status: 400 });
     }
 
     const { prova, atletas } = scraped;
