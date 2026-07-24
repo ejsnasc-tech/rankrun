@@ -212,7 +212,10 @@ async function scrapeActivo(url: string) {
 // ─── Sportschrono Clax (XML) ──────────────────────────────────────────────────
 
 async function fetchClaxXml(dataUrl: string, referer: string): Promise<string> {
-  const xmlRes = await fetch(dataUrl, {
+  // sportschrono.com.br (non-www) redirects and strips /resultados/ from path → use www. directly
+  const fetchUrl = dataUrl.replace(/^(https?:\/\/)sportschrono\.com\.br\//, "$1www.sportschrono.com.br/")
+                          .replace(/^http:\/\//, "https://");
+  const xmlRes = await fetch(fetchUrl, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       "Accept": "*/*",
