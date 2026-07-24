@@ -1,7 +1,8 @@
-import { getDB, formatTempo, distanciaLabel } from "@/lib/db";
+import { getDB, distanciaLabel } from "@/lib/db";
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import ResultadosClient from "./ResultadosClient";
 
 export default async function ProvaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -15,7 +16,7 @@ export default async function ProvaPage({ params }: { params: Promise<{ slug: st
   if (!prova) notFound();
 
   const { results } = await db.prepare(
-    "SELECT * FROM resultados WHERE prova_id = ? ORDER BY tempo_liquido_seg ASC LIMIT 500"
+    "SELECT * FROM resultados WHERE prova_id = ? ORDER BY tempo_liquido_seg ASC LIMIT 2000"
   ).bind(slug).all<{
     id: number; atleta_nome: string; atleta_cidade: string | null; atleta_uf: string | null;
     categoria: string | null; tempo_liquido_seg: number; colocacao_geral: number | null;
@@ -46,33 +47,7 @@ export default async function ProvaPage({ params }: { params: Promise<{ slug: st
           Resultados ainda não importados para esta prova.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-            <span className="font-semibold text-slate-700">{results.length} finishers</span>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium w-12">#</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Atleta</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Local</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Categoria</th>
-                <th className="text-right px-4 py-3 text-slate-500 font-medium">Tempo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {results.map((r, i) => (
-                <tr key={r.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-2.5 font-bold text-orange-500">{r.colocacao_geral ?? i + 1}º</td>
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{r.atleta_nome}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/")}</td>
-                  <td className="px-4 py-2.5 text-slate-500">{r.categoria || "—"}</td>
-                  <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-800">{formatTempo(r.tempo_liquido_seg)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ResultadosClient results={results} />
       )}
     </div>
   );
