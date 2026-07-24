@@ -5,9 +5,10 @@ interface EventoDesc { nome: string; cidade: string; data: string; url: string; 
 interface BulkStatus { current: number; total: number; currentName: string; errors: string[]; done: boolean; }
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<"url" | "lote" | "bulk" | "prova" | "resultado">("url");
+  const [tab, setTab] = useState<"url" | "lote" | "bulk" | "chipbrasil" | "prova" | "resultado">("url");
   const [msg, setMsg] = useState("");
   const [eventos, setEventos] = useState<EventoDesc[]>([]);
+  const [eventosCb, setEventosCb] = useState<EventoDesc[]>([]);
   const [bulk, setBulk] = useState<BulkStatus | null>(null);
   const [loteUrls, setLoteUrls] = useState("");
 
@@ -68,6 +69,45 @@ export default function AdminPage() {
     setMsg(`✅ Importação concluída! ${eventos.length - errors.length} importadas, ${errors.length} erros.`);
   }
 
+  // ── Descobrir ChipBrasil ──────────────────────────────────────────────────
+  async function descobrirChipBrasil() {
+    setEventosCb([]);
+    setBulk(null);
+    setMsg("⏳ Buscando corridas no ChipBrasil via Wayback Machine...");
+    const r = await fetch("/api/admin/discover-chipbrasil");
+    const json = await r.json() as { events?: EventoDesc[]; total?: number; erro?: string };
+    if (r.ok && json.events) {
+      setEventosCb(json.events);
+      setMsg(`✅ ${json.total} corridas encontradas. Clique em "Importar todas" para começar.`);
+    } else {
+      setMsg(`❌ ${json.erro}`);
+    }
+  }
+
+  async function importarTodasCb() {
+    if (eventosCb.length === 0) return;
+    const errors: string[] = [];
+    setBulk({ current: 0, total: eventosCb.length, currentName: "", errors, done: false });
+    for (let i = 0; i < eventosCb.length; i++) {
+      const ev = eventosCb[i];
+      setBulk(prev => ({ ...prev!, current: i + 1, currentName: ev.nome }));
+      try {
+        const r = await fetch("/api/admin/scrape", {
+          method: "POST",
+          body: JSON.stringify({ url: ev.url, titulo: ev.nome.replace(/\s*\(\d{2}\/\d{2}\/\d{4}\)$/, "") }),
+          headers: { "Content-Type": "application/json" },
+        });
+        const json = await r.json() as { erro?: string };
+        if (!r.ok) errors.push(`${ev.nome}: ${json.erro}`);
+      } catch (err) {
+        errors.push(`${ev.nome}: ${String(err)}`);
+      }
+      await new Promise(res => setTimeout(res, 400));
+    }
+    setBulk(prev => ({ ...prev!, done: true, errors }));
+    setMsg(`✅ ChipBrasil concluído! ${eventosCb.length - errors.length} importadas, ${errors.length} erros.`);
+  }
+
   // ── Lote de URLs ──────────────────────────────────────────────────────────
   async function importarLote() {
     const urls = loteUrls.split("\n").map(u => u.trim()).filter(u => u.length > 0);
@@ -119,6 +159,7 @@ export default function AdminPage() {
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "url", label: "🔗 URL única" },
     { id: "lote", label: "📋 Lote de URLs" },
+    { id: "chipbrasil", label: "📦 ChipBrasil" },
     { id: "bulk", label: "📦 Sportschrono" },
     { id: "prova", label: "+ Cadastrar prova" },
     { id: "resultado", label: "CSV" },
@@ -200,6 +241,65 @@ export default function AdminPage() {
           >
             Importar todas as URLs
           </button>
+        </div>
+      )}
+
+      {/* ── ChipBrasil ── */}
+      {tab === "chipbrasil" && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+          <h2 className="font-semibold text-slate-800">Importar histórico ChipBrasil</h2>
+          <p className="text-sm text-slate-500">
+            Busca automaticamente as corridas do ChipBrasil / BrLive usando o Wayback Machine (arquivo.org).
+            Quanto mais corridas tiverem sido abertas por usuários, mais resultados aparecem.
+          </p>
+          <div className="flex gap-3">
+            <button onClick={descobrirChipBrasil} className="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+              1. Descobrir corridas
+            </button>
+            {eventosCb.length > 0 && !bulk?.done && (
+              <button onClick={importarTodasCb} disabled={!!bulk && !bulk.done} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+                2. Importar todas ({eventosCb.length})
+              </button>
+            )}
+          </div>
+          {bulk && tab === "chipbrasil" && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>{bulk.done ? "Concluído!" : `Importando ${bulk.current}/${bulk.total}...`}</span>
+                <span>{Math.round((bulk.current / bulk.total) * 100)}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="bg-orange-500 h-2 rounded-full transition-all" style={{ width: `${(bulk.current / bulk.total) * 100}%` }} />
+              </div>
+              {!bulk.done && <p className="text-xs text-slate-400 truncate">{bulk.currentName}</p>}
+              {bulk.done && bulk.errors.length > 0 && (
+                <details className="text-xs text-red-600">
+                  <summary className="cursor-pointer">{bulk.errors.length} erro(s)</summary>
+                  <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                    {bulk.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+          {eventosCb.length > 0 && (
+            <div className="border border-slate-200 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-slate-500 font-medium">Corrida</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {eventosCb.map((ev, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-3 py-1.5 text-slate-700">{ev.nome}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

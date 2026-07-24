@@ -217,9 +217,10 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
   if (!fMatch) throw new Error("URL do clax inválida — esperado ?f=...clax");
   const fPath = decodeURIComponent(fMatch[1]); // evento/2025/SLUG/SLUG.clax
 
-  // Extract directory of g-live.html to build data URL
+  // Extract base dir from any *.html?f= viewer URL
   // e.g. https://brlive.info/brlive/g-live.html → https://brlive.info/brlive/
-  const baseUrl = gliveUrl.match(/^(https?:\/\/.+\/)g-live\.html/i)?.[1]
+  //      https://brlive.info/brlive/brlive-bsb.html → https://brlive.info/brlive/
+  const baseUrl = gliveUrl.match(/^(https?:\/\/.+\/)[^/]+\.html/i)?.[1]
     ?? "https://www.sportschrono.com.br/resultados/";
   const dataUrl = baseUrl + fPath;
 
@@ -352,8 +353,8 @@ export async function POST(req: NextRequest) {
       scraped = await scrapeRacezone(url);
     } else if (url.includes("o2corre.com.br") || url.includes("activodeporte")) {
       scraped = await scrapeActivo(url);
-    } else if (url.includes("g-live.html") || url.includes(".clax")) {
-      // Sportschrono, BrLive/ChipBrasil, resultadosbrasil.com.br — any ClaxInfo viewer
+    } else if (url.includes("brlive.info") || url.includes("g-live.html") || url.includes("brlive-bsb") || url.includes(".clax")) {
+      // Sportschrono, BrLive/ChipBrasil (g-live.html, brlive-bsb.html, brlive-bsb1.html), etc.
       scraped = await scrapeClax(url, titulo);
     } else if (url.includes("chipbrasil.com.br")) {
       // ChipBrasil: follow the redirect/link to the BrLive viewer
