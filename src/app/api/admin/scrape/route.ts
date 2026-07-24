@@ -304,6 +304,24 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
   return { prova, atletas };
 }
 
+// ─── ChipBrasil (segue redirect para BrLive) ──────────────────────────────────
+
+async function scrapeChipBrasil(url: string, tituloHint?: string) {
+  const res = await fetch(url, {
+    redirect: "follow",
+    headers: { "User-Agent": "Mozilla/5.0", "Accept": "text/html,*/*" },
+  });
+  // Se o servidor redirecionou para um g-live.html, usa scrapeClax direto
+  if (res.url.includes("g-live.html") || res.url.includes(".clax")) {
+    return scrapeClax(res.url, tituloHint);
+  }
+  // Tenta encontrar um link BrLive na página HTML
+  const html = await res.text();
+  const m = html.match(/https:\/\/brlive\.info\/brlive\/g-live\.html\?f=[^\s"'<]+/);
+  if (m) return scrapeClax(m[0], tituloHint);
+  throw new Error("Não foi possível encontrar o resultado no ChipBrasil. Copie e use a URL do BrLive diretamente.");
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RazEvent { id: string; name: string; place: string; link: string; startDate: string; }
@@ -335,10 +353,13 @@ export async function POST(req: NextRequest) {
     } else if (url.includes("o2corre.com.br") || url.includes("activodeporte")) {
       scraped = await scrapeActivo(url);
     } else if (url.includes("g-live.html") || url.includes(".clax")) {
-      // Handles Sportschrono, BrLive (ChipBrasil), and any other ClaxInfo-based platform
+      // Sportschrono, BrLive/ChipBrasil, resultadosbrasil.com.br — any ClaxInfo viewer
       scraped = await scrapeClax(url, titulo);
+    } else if (url.includes("chipbrasil.com.br")) {
+      // ChipBrasil: follow the redirect/link to the BrLive viewer
+      scraped = await scrapeChipBrasil(url, titulo);
     } else {
-      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br, brlive.info (ChipBrasil), sportschrono.com.br" }, { status: 400 });
+      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br, chipbrasil.com.br, brlive.info, sportschrono.com.br" }, { status: 400 });
     }
 
     const { prova, atletas } = scraped;
