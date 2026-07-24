@@ -52,7 +52,7 @@ export default function AdminPage() {
       try {
         const r = await fetch("/api/admin/scrape", {
           method: "POST",
-          body: JSON.stringify({ url: ev.url }),
+          body: JSON.stringify({ url: ev.url, titulo: ev.nome }),
           headers: { "Content-Type": "application/json" },
         });
         const json = await r.json() as { erro?: string };

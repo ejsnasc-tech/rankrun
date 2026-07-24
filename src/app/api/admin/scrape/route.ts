@@ -25,11 +25,24 @@ function kmToMetros(km: number): number {
 
 function modalidadeToMetros(mod: string): number {
   const m = mod.toUpperCase();
-  if (m.includes("5K") || m === "5") return 5000;
-  if (m.includes("10K") || m === "10") return 10000;
-  if (m.includes("MEIA") || m.includes("HALF") || m === "21") return 21097;
-  if (m.includes("MARATONA") || m.includes("MARATHON") || m === "42") return 42195;
+  if (/^5\s*KM/.test(m) || m.includes("5K") || m === "5") return 5000;
+  if (/^10\s*KM/.test(m) || m.includes("10K") || m === "10") return 10000;
+  if (/^21\s*KM/.test(m) || m.includes("MEIA") || m.includes("HALF") || m === "21") return 21097;
+  if (/^42\s*KM/.test(m) || m.includes("MARATONA") || m.includes("MARATHON") || m === "42") return 42195;
   return 0;
+}
+
+function parseAttrsXml(tag: string): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  for (const m of tag.matchAll(/(\w+)="([^"]*)"/g)) attrs[m[1]] = m[2];
+  return attrs;
+}
+
+function parseClaxTempo(t: string): number | null {
+  if (!t) return null;
+  const m = t.match(/^(\d+)h(\d+)[''`](\d+)/);
+  if (!m) return null;
+  return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
 }
 
 // ─── Racezone ─────────────────────────────────────────────────────────────────
@@ -196,6 +209,99 @@ async function scrapeActivo(url: string) {
   return { prova, atletas };
 }
 
+// ─── Sportschrono Clax (XML) ──────────────────────────────────────────────────
+
+async function scrapeClax(gliveUrl: string, tituloHint?: string) {
+  // "https://www.sportschrono.com.br/resultados/g-live.html?f=evento/2025/SLUG/SLUG.clax"
+  const fMatch = gliveUrl.match(/[?&]f=(.+\.clax)/i);
+  if (!fMatch) throw new Error("URL do clax inválida — esperado ?f=...clax");
+  const fPath = decodeURIComponent(fMatch[1]); // evento/2025/SLUG/SLUG.clax
+
+  const baseUrl = gliveUrl.match(/^(https?:\/\/[^/]+\/resultados\/)/)?.[1]
+    ?? "https://www.sportschrono.com.br/resultados/";
+  const dataUrl = baseUrl + fPath;
+
+  const xmlRes = await fetch(dataUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "application/xml, text/xml, */*",
+      "X-Requested-With": "XMLHttpRequest",
+      "Referer": gliveUrl.split("?")[0],
+    },
+  });
+  if (!xmlRes.ok) throw new Error(`Falha ao buscar clax: ${xmlRes.status}`);
+  const xml = await xmlRes.text();
+
+  if (!xml.includes("<Epreuve")) throw new Error("Arquivo clax não encontrado ou formato inválido");
+
+  // Parse Epreuve header
+  const eprMatch = xml.match(/<Epreuve ([^>]+)>/);
+  const epr = eprMatch ? parseAttrsXml(eprMatch[1]) : {};
+
+  // Parse date from "domingo, 21 de dezembro de 2025"
+  const MONTHS: Record<string, number> = { janeiro:1,fevereiro:2,março:3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12 };
+  const dateStr = epr.dates ?? "";
+  const dm = dateStr.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  const mes = dm ? (MONTHS[dm[2].toLowerCase()] ?? 1) : 1;
+  const data = dm ? `${dm[3]}-${String(mes).padStart(2,"0")}-${String(Number(dm[1])).padStart(2,"0")}`
+    : new Date().toISOString().slice(0, 10);
+
+  // Build athlete map keyed by dossard
+  const engMap: Record<string, { nome: string; categoria: string; parcours: string; cidade: string }> = {};
+  for (const m of xml.matchAll(/<E ([^/]+)\/>/g)) {
+    const a = parseAttrsXml(m[1]);
+    if (!a.d) continue;
+    engMap[a.d] = {
+      nome: a.n ?? "",
+      categoria: [a.ca, a.x].filter(Boolean).join(" ").trim(),
+      parcours: a.p ?? "",
+      cidade: a.rg ?? "",
+    };
+  }
+
+  // Parse results (already sorted by position)
+  const atletas = [];
+  let rank = 1;
+  for (const m of xml.matchAll(/<R ([^/]+)\/>/g)) {
+    const a = parseAttrsXml(m[1]);
+    const eng = engMap[a.d ?? ""];
+    if (!eng) continue;
+    const tempoLiq = parseClaxTempo(a.re ?? a.t ?? "");
+    if (!tempoLiq) continue;
+    const distMetros = modalidadeToMetros(eng.parcours) || 5000;
+    atletas.push({
+      atleta_nome: eng.nome || null,
+      atleta_uf: null as string | null,
+      categoria: (eng.categoria + (eng.parcours ? " / " + eng.parcours : "")).trim() || null,
+      tempo_liquido_seg: tempoLiq,
+      tempo_bruto_seg: null as number | null,
+      colocacao_geral: rank++,
+      distancia_metros: distMetros,
+    });
+  }
+
+  if (atletas.length === 0) throw new Error("Nenhum resultado encontrado no clax");
+
+  const distCounts: Record<number, number> = {};
+  for (const a of atletas) distCounts[a.distancia_metros] = (distCounts[a.distancia_metros] ?? 0) + 1;
+  const primaryDistancia = Number(Object.entries(distCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 5000);
+
+  // Title: prefer hint from discover, else clean up slug
+  const slugName = fPath.match(/\/([^/]+)\.clax$/i)?.[1]?.replace(/-/g, " ") ?? epr.nom ?? "Corrida";
+  const titulo = tituloHint || slugName.replace(/\b\w/g, c => c.toUpperCase());
+
+  const prova = {
+    id: slugify(`${titulo}-${data.slice(0, 4)}`),
+    titulo,
+    cidade: null as string | null,
+    uf: null as string | null,
+    data,
+    distancia_metros: primaryDistancia,
+  };
+
+  return { prova, atletas };
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RazEvent { id: string; name: string; place: string; link: string; startDate: string; }
@@ -217,17 +323,19 @@ interface ActivoResult {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json() as { url: string };
+    const { url, titulo } = await req.json() as { url: string; titulo?: string };
     if (!url) return NextResponse.json({ erro: "URL não informada" }, { status: 400 });
 
-    let scraped: { prova: { id: string; titulo: string; cidade: string; uf: string; data: string; distancia_metros: number }; atletas: { atleta_nome: string; atleta_uf: string | null; categoria: string | null; tempo_liquido_seg: number | null; tempo_bruto_seg: number | null; colocacao_geral: number | null; distancia_metros: number }[] };
+    let scraped: { prova: { id: string; titulo: string; cidade: string | null; uf: string | null; data: string; distancia_metros: number }; atletas: { atleta_nome: string | null; atleta_uf: string | null; categoria: string | null; tempo_liquido_seg: number | null; tempo_bruto_seg: number | null; colocacao_geral: number | null; distancia_metros: number }[] };
 
     if (url.includes("racezone.com.br")) {
       scraped = await scrapeRacezone(url);
     } else if (url.includes("o2corre.com.br") || url.includes("activodeporte")) {
       scraped = await scrapeActivo(url);
+    } else if (url.includes("g-live.html") || url.includes(".clax")) {
+      scraped = await scrapeClax(url, titulo);
     } else {
-      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br" }, { status: 400 });
+      return NextResponse.json({ erro: "Plataforma não suportada. URLs aceitas: racezone.com.br, o2corre.com.br, sportschrono.com.br" }, { status: 400 });
     }
 
     const { prova, atletas } = scraped;

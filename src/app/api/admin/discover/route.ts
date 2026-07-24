@@ -26,7 +26,12 @@ export async function GET() {
         const url = linkEntry?.url ?? null;
         return { nome: ev.nome, cidade: ev.cidade, data: ev.data, url };
       })
-      .filter(e => e.url?.includes("racezone.com.br"));
+      .filter(e => {
+        if (!e.url) return false;
+        const u = e.url;
+        // Accept Racezone and Sportschrono clax (g-live viewer)
+        return u.includes("racezone.com.br") || u.includes("g-live.html") || u.includes(".clax");
+      });
 
     return NextResponse.json({ events, total: events.length });
   } catch (e) {
