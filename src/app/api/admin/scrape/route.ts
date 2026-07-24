@@ -211,6 +211,33 @@ async function scrapeActivo(url: string) {
 
 // ─── Sportschrono Clax (XML) ──────────────────────────────────────────────────
 
+async function fetchClaxXml(dataUrl: string, referer: string): Promise<string> {
+  const xmlRes = await fetch(dataUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Accept": "*/*",
+      "Referer": referer,
+    },
+  });
+  if (xmlRes.ok) return xmlRes.text();
+
+  // Some servers (e.g. BrLive) block Cloudflare Worker IPs → try Wayback Machine
+  if (xmlRes.status === 406 || xmlRes.status === 403 || xmlRes.status === 451) {
+    const availRes = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(dataUrl)}`);
+    if (availRes.ok) {
+      const avail = await availRes.json() as { archived_snapshots?: { closest?: { available?: boolean; url?: string } } };
+      const closestUrl = avail.archived_snapshots?.closest?.url;
+      if (closestUrl) {
+        const rawUrl = closestUrl.replace(/\/web\/(\d+)\//, "/web/$1if_/");
+        const wbRes = await fetch(rawUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+        if (wbRes.ok) return wbRes.text();
+      }
+    }
+  }
+
+  throw new Error(`Falha ao buscar clax: ${xmlRes.status}`);
+}
+
 async function scrapeClax(gliveUrl: string, tituloHint?: string) {
   // "https://www.sportschrono.com.br/resultados/g-live.html?f=evento/2025/SLUG/SLUG.clax"
   const fMatch = gliveUrl.match(/[?&]f=(.+\.clax)/i);
@@ -224,16 +251,7 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
     ?? "https://www.sportschrono.com.br/resultados/";
   const dataUrl = baseUrl + fPath;
 
-  const xmlRes = await fetch(dataUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0",
-      "Accept": "application/xml, text/xml, */*",
-      "X-Requested-With": "XMLHttpRequest",
-      "Referer": gliveUrl.split("?")[0],
-    },
-  });
-  if (!xmlRes.ok) throw new Error(`Falha ao buscar clax: ${xmlRes.status}`);
-  const xml = await xmlRes.text();
+  const xml = await fetchClaxXml(dataUrl, gliveUrl.split("?")[0]);
 
   if (!xml.includes("<Epreuve")) throw new Error("Arquivo clax não encontrado ou formato inválido");
 
