@@ -1,10 +1,16 @@
 "use client";
 import { useState } from "react";
 
-export default function AdminPage() {
-  const [tab, setTab] = useState<"url" | "prova" | "resultado">("url");
-  const [msg, setMsg] = useState("");
+interface EventoDesc { nome: string; cidade: string; data: string; url: string; }
+interface BulkStatus { current: number; total: number; currentName: string; errors: string[]; done: boolean; }
 
+export default function AdminPage() {
+  const [tab, setTab] = useState<"url" | "bulk" | "prova" | "resultado">("url");
+  const [msg, setMsg] = useState("");
+  const [eventos, setEventos] = useState<EventoDesc[]>([]);
+  const [bulk, setBulk] = useState<BulkStatus | null>(null);
+
+  // ── URL única ──────────────────────────────────────────────────────────────
   async function importarUrl(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -20,6 +26,48 @@ export default function AdminPage() {
     }
   }
 
+  // ── Descobrir Sportschrono ─────────────────────────────────────────────────
+  async function descobrir() {
+    setEventos([]);
+    setBulk(null);
+    setMsg("⏳ Buscando corridas no Sportschrono...");
+    const r = await fetch("/api/admin/discover");
+    const json = await r.json() as { events?: EventoDesc[]; total?: number; erro?: string };
+    if (r.ok && json.events) {
+      setEventos(json.events);
+      setMsg(`✅ ${json.total} corridas encontradas. Clique em "Importar todas" para começar.`);
+    } else {
+      setMsg(`❌ ${json.erro}`);
+    }
+  }
+
+  async function importarTodas() {
+    if (eventos.length === 0) return;
+    const errors: string[] = [];
+    setBulk({ current: 0, total: eventos.length, currentName: "", errors, done: false });
+
+    for (let i = 0; i < eventos.length; i++) {
+      const ev = eventos[i];
+      setBulk(prev => ({ ...prev!, current: i + 1, currentName: ev.nome }));
+      try {
+        const r = await fetch("/api/admin/scrape", {
+          method: "POST",
+          body: JSON.stringify({ url: ev.url }),
+          headers: { "Content-Type": "application/json" },
+        });
+        const json = await r.json() as { erro?: string };
+        if (!r.ok) errors.push(`${ev.nome}: ${json.erro}`);
+      } catch (err) {
+        errors.push(`${ev.nome}: ${String(err)}`);
+      }
+      await new Promise(res => setTimeout(res, 300));
+    }
+
+    setBulk(prev => ({ ...prev!, done: true, errors }));
+    setMsg(`✅ Importação concluída! ${eventos.length - errors.length} importadas, ${errors.length} erros.`);
+  }
+
+  // ── Manual: prova ──────────────────────────────────────────────────────────
   async function addProva(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -28,6 +76,7 @@ export default function AdminPage() {
     if (r.ok) (e.target as HTMLFormElement).reset();
   }
 
+  // ── Manual: CSV ───────────────────────────────────────────────────────────
   async function importar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -37,36 +86,110 @@ export default function AdminPage() {
     setMsg(r.ok ? `✅ ${json.importados} resultados importados!` : `❌ ${json.erro}`);
   }
 
+  const tabs: { id: typeof tab; label: string }[] = [
+    { id: "url", label: "🔗 URL única" },
+    { id: "bulk", label: "📦 Histórico Sportschrono" },
+    { id: "prova", label: "+ Cadastrar prova" },
+    { id: "resultado", label: "📋 CSV" },
+  ];
+
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-slate-900">Admin — RankRun</h1>
 
       {msg && <div className="bg-slate-100 rounded-lg px-4 py-3 text-sm font-medium">{msg}</div>}
 
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setTab("url")} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === "url" ? "bg-orange-500 text-white" : "bg-white border border-slate-200 text-slate-600"}`}>🔗 Importar por URL</button>
-        <button onClick={() => setTab("prova")} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === "prova" ? "bg-orange-500 text-white" : "bg-white border border-slate-200 text-slate-600"}`}>+ Cadastrar prova</button>
-        <button onClick={() => setTab("resultado")} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === "resultado" ? "bg-orange-500 text-white" : "bg-white border border-slate-200 text-slate-600"}`}>📋 Importar CSV</button>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === t.id ? "bg-orange-500 text-white" : "bg-white border border-slate-200 text-slate-600"}`}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
+      {/* ── URL única ── */}
       {tab === "url" && (
         <form onSubmit={importarUrl} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Importar corrida por URL</h2>
-          <p className="text-sm text-slate-500">Cole a URL de uma corrida do <strong>Racezone</strong> ou <strong>o2corre</strong>. O sistema busca tudo automaticamente.</p>
+          <p className="text-sm text-slate-500">Cole a URL de uma corrida do <strong>Racezone</strong> ou <strong>o2corre</strong>.</p>
           <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 space-y-1">
             <div>✅ <strong>Racezone:</strong> <code>https://resultados.racezone.com.br/sportschrono/#/nome-da-corrida</code></div>
             <div>✅ <strong>o2corre:</strong> <code>https://www.o2corre.com.br/resultado/40209/</code></div>
           </div>
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">URL da corrida</label>
-            <input required name="url" type="url" placeholder="https://resultados.racezone.com.br/..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
-          </div>
+          <input required name="url" type="url" placeholder="https://resultados.racezone.com.br/..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
-            Importar automaticamente
+            Importar
           </button>
         </form>
       )}
 
+      {/* ── Bulk Sportschrono ── */}
+      {tab === "bulk" && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+          <h2 className="font-semibold text-slate-800">Importar histórico completo do Sportschrono</h2>
+          <p className="text-sm text-slate-500">Busca todas as corridas cadastradas no Sportschrono com resultado no Racezone e importa de uma vez.</p>
+
+          <div className="flex gap-3">
+            <button onClick={descobrir} className="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+              1. Descobrir corridas
+            </button>
+            {eventos.length > 0 && !bulk?.done && (
+              <button onClick={importarTodas} disabled={!!bulk && !bulk.done} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+                2. Importar todas ({eventos.length})
+              </button>
+            )}
+          </div>
+
+          {/* Progresso */}
+          {bulk && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>{bulk.done ? "Concluído!" : `Importando ${bulk.current}/${bulk.total}...`}</span>
+                <span>{Math.round((bulk.current / bulk.total) * 100)}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="bg-orange-500 h-2 rounded-full transition-all" style={{ width: `${(bulk.current / bulk.total) * 100}%` }} />
+              </div>
+              {!bulk.done && <p className="text-xs text-slate-500 truncate">{bulk.currentName}</p>}
+              {bulk.done && bulk.errors.length > 0 && (
+                <details className="text-xs text-red-600">
+                  <summary className="cursor-pointer">{bulk.errors.length} erros (clique para ver)</summary>
+                  <ul className="mt-1 space-y-0.5 list-disc list-inside">
+                    {bulk.errors.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+
+          {/* Lista descoberta */}
+          {eventos.length > 0 && (
+            <div className="border border-slate-200 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-slate-500 font-medium">Corrida</th>
+                    <th className="text-left px-3 py-2 text-slate-500 font-medium">Cidade</th>
+                    <th className="text-left px-3 py-2 text-slate-500 font-medium">Data</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {eventos.map((ev, i) => (
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-3 py-1.5 text-slate-700">{ev.nome}</td>
+                      <td className="px-3 py-1.5 text-slate-500">{ev.cidade}</td>
+                      <td className="px-3 py-1.5 text-slate-500 whitespace-nowrap">{ev.data}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Cadastrar prova ── */}
       {tab === "prova" && (
         <form onSubmit={addProva} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Cadastrar prova</h2>
@@ -99,27 +222,24 @@ export default function AdminPage() {
               <option value="42195">Maratona</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Link oficial</label>
-            <input type="url" name="link_oficial" placeholder="https://..." className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
-          </div>
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
             Cadastrar prova
           </button>
         </form>
       )}
 
+      {/* ── CSV ── */}
       {tab === "resultado" && (
         <form onSubmit={importar} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
           <h2 className="font-semibold text-slate-800">Importar resultados (CSV)</h2>
-          <p className="text-sm text-slate-500">Cole os dados em formato CSV: <code className="bg-slate-100 px-1 rounded">nome,cidade,uf,categoria,tempo_liquido,tempo_bruto,colocacao_geral</code></p>
+          <p className="text-sm text-slate-500">Formato: <code className="bg-slate-100 px-1 rounded">nome,cidade,uf,categoria,tempo_liquido,tempo_bruto,colocacao_geral</code></p>
           <div>
             <label className="block text-sm text-slate-600 mb-1">ID da prova</label>
             <input required name="prova_id" placeholder="maratona-sp-2026" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-400" />
           </div>
           <div>
             <label className="block text-sm text-slate-600 mb-1">Dados CSV</label>
-            <textarea required name="csv" rows={10} placeholder={"João Silva,São Paulo,SP,M30-34,3:45:22,3:47:00,892\nMaria Santos,Rio de Janeiro,RJ,F35-39,4:02:11,,1203"} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-400" />
+            <textarea required name="csv" rows={10} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-400" />
           </div>
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
             Importar
