@@ -9,6 +9,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const distancia = params.distancia ? Number(params.distancia) : null;
   const uf = params.uf || null;
   const busca = params.q || null;
+  const sexo = params.sexo || null;
 
   const db = await getDB();
 
@@ -26,6 +27,8 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   if (distancia) { query += " AND p.distancia_metros = ?"; binds.push(distancia); }
   if (uf) { query += " AND r.atleta_uf = ?"; binds.push(uf); }
   if (busca) { query += " AND r.atleta_nome LIKE ?"; binds.push(`%${busca}%`); }
+  if (sexo === "M") { query += " AND (r.categoria LIKE 'M-%' OR r.categoria LIKE 'M %' OR r.categoria LIKE '%MASCULINO%')"; }
+  if (sexo === "F") { query += " AND (r.categoria LIKE 'F-%' OR r.categoria LIKE 'F %' OR r.categoria LIKE '%FEMININO%')"; }
 
   query += " GROUP BY r.atleta_nome, r.atleta_cidade, r.atleta_uf, p.distancia_metros ORDER BY melhor_tempo ASC LIMIT 100";
 
@@ -37,7 +40,8 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
   const titulo = [
     uf ? `${uf}` : "Brasil",
     distancia ? distanciaLabel(distancia) : "Todas as distâncias",
-  ].join(" · ");
+    sexo === "M" ? "Masculino" : sexo === "F" ? "Feminino" : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <div className="space-y-6">
@@ -56,6 +60,11 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
         <select name="uf" defaultValue={uf || ""} className="border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-orange-400">
           <option value="">Todo o Brasil</option>
           {UFs.map(u => <option key={u} value={u}>{u}</option>)}
+        </select>
+        <select name="sexo" defaultValue={sexo || ""} className="border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-orange-400">
+          <option value="">Masculino e Feminino</option>
+          <option value="M">Masculino</option>
+          <option value="F">Feminino</option>
         </select>
         <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
           Filtrar
