@@ -71,9 +71,20 @@ async function scrapeRacezone(url: string) {
   }
   const primaryDistancia = Number(Object.entries(distanceCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 5000);
 
-  // Parse place → city + uf
-  const placeParts = event.place.split(" - ");
-  const uf = placeParts.at(-1)?.trim().slice(-2).toUpperCase() ?? "BR";
+  // Parse place → city + uf ("PIRAMBU - SERGIPE" → cidade="PIRAMBU", uf="SE")
+  const placeParts = event.place.split(/\s*-\s*/);
+  const estadoNome = placeParts.at(-1)?.trim() ?? "";
+  const UF_MAP: Record<string, string> = {
+    "ACRE":"AC","ALAGOAS":"AL","AMAPÁ":"AP","AMAPA":"AP","AMAZONAS":"AM","BAHIA":"BA",
+    "CEARÁ":"CE","CEARA":"CE","DISTRITO FEDERAL":"DF","ESPÍRITO SANTO":"ES","ESPIRITO SANTO":"ES",
+    "GOIÁS":"GO","GOIAS":"GO","MARANHÃO":"MA","MARANHAO":"MA","MATO GROSSO DO SUL":"MS",
+    "MATO GROSSO":"MT","MINAS GERAIS":"MG","PARÁ":"PA","PARA":"PA","PARAÍBA":"PB","PARAIBA":"PB",
+    "PARANÁ":"PR","PARANA":"PR","PERNAMBUCO":"PE","PIAUÍ":"PI","PIAUI":"PI","RIO DE JANEIRO":"RJ",
+    "RIO GRANDE DO NORTE":"RN","RIO GRANDE DO SUL":"RS","RONDÔNIA":"RO","RONDONIA":"RO",
+    "RORAIMA":"RR","SANTA CATARINA":"SC","SÃO PAULO":"SP","SAO PAULO":"SP","SERGIPE":"SE",
+    "TOCANTINS":"TO",
+  };
+  const uf = UF_MAP[estadoNome.toUpperCase()] ?? (estadoNome.length === 2 ? estadoNome.toUpperCase() : "BR");
   const cidade = placeParts.slice(0, -1).join(" - ").trim() || event.place;
 
   const prova = {
@@ -234,7 +245,14 @@ export async function POST(req: NextRequest) {
       await db.prepare(
         `INSERT INTO provas (id, titulo, cidade, uf, data, distancia_metros, status)
          VALUES (?, ?, ?, ?, ?, ?, 'encerradas')`
-      ).bind(provaId, prova.titulo, prova.cidade, prova.uf, prova.data, prova.distancia_metros).run();
+      ).bind(
+        provaId,
+        prova.titulo || "Sem título",
+        prova.cidade || null,
+        prova.uf || null,
+        prova.data || null,
+        prova.distancia_metros || 5000,
+      ).run();
     }
 
     // Import results in batches
@@ -244,7 +262,15 @@ export async function POST(req: NextRequest) {
       await db.prepare(
         `INSERT INTO resultados (prova_id, atleta_nome, atleta_uf, categoria, tempo_liquido_seg, tempo_bruto_seg, colocacao_geral)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).bind(provaId, a.atleta_nome, a.atleta_uf, a.categoria, a.tempo_liquido_seg, a.tempo_bruto_seg, a.colocacao_geral).run();
+      ).bind(
+        provaId,
+        a.atleta_nome ?? null,
+        a.atleta_uf ?? null,
+        a.categoria ?? null,
+        a.tempo_liquido_seg ?? null,
+        a.tempo_bruto_seg ?? null,
+        a.colocacao_geral ?? null,
+      ).run();
       importados++;
     }
 
