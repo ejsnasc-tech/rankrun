@@ -1,7 +1,9 @@
-**/node_modules
-**/dist
-**/.env
-coverage
+.next/
+.open-next/
+node_modules/
+.env
+.env.local
+*.log
+.wrangler/
 .DS_Store
-results-backup.json
-backend/results-backup.json
+

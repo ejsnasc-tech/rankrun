@@ -1,0 +1,33 @@
+{
+  "name": "rankrun",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:cf": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare deploy",
+    "db:migrate": "wrangler d1 migrations apply rankrun-db",
+    "db:migrate:prod": "wrangler d1 migrations apply rankrun-db --remote"
+  },
+  "dependencies": {
+    "next": "^15.5.15",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260501.1",
+    "@opennextjs/cloudflare": "^1.19.5",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wrangler": "^4.86.0"
+  }
+}
