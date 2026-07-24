@@ -366,33 +366,35 @@ export async function POST(req: NextRequest) {
     const { prova, atletas } = scraped;
     const db = await getDB();
 
-    // Create or ignore prova
+    // Create prova if not exists, skip entirely if already imported
     let provaId = prova.id;
     const existing = await db.prepare("SELECT id FROM provas WHERE id = ?").bind(provaId).first<{id: string}>();
-    if (!existing) {
-      // Check for collision
-      let suffix = 0;
-      while (await db.prepare("SELECT id FROM provas WHERE id = ?").bind(provaId).first()) {
-        provaId = `${prova.id}-${++suffix}`;
-      }
-      await db.prepare(
-        `INSERT INTO provas (id, titulo, cidade, uf, data, distancia_metros, status)
-         VALUES (?, ?, ?, ?, ?, ?, 'encerradas')`
-      ).bind(
-        provaId,
-        prova.titulo || "Sem título",
-        prova.cidade || null,
-        prova.uf || null,
-        prova.data || null,
-        prova.distancia_metros || 5000,
-      ).run();
+    if (existing) {
+      return NextResponse.json({ ok: true, importados: 0, prova_id: provaId, titulo: prova.titulo, skipped: true });
     }
 
-    // Batch insert all results (single D1 roundtrip — very fast)
+    // Resolve slug collision
+    let suffix = 0;
+    while (await db.prepare("SELECT id FROM provas WHERE id = ?").bind(provaId).first()) {
+      provaId = `${prova.id}-${++suffix}`;
+    }
+
+    await db.prepare(
+      `INSERT INTO provas (id, titulo, cidade, uf, data, distancia_metros, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'encerradas')`
+    ).bind(
+      provaId,
+      prova.titulo || "Sem título",
+      prova.cidade || "",        // NOT NULL — empty string when unknown
+      prova.uf || "",            // NOT NULL — empty string when unknown
+      prova.data || new Date().toISOString().slice(0, 10),
+      prova.distancia_metros || 5000,
+    ).run();
+
+    // Batch insert all results (single D1 roundtrip — fast)
     const toInsert = atletas.filter(a => a.tempo_liquido_seg != null);
     const SQL = `INSERT INTO resultados (prova_id, atleta_nome, atleta_uf, categoria, tempo_liquido_seg, tempo_bruto_seg, colocacao_geral) VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    // D1 batch is limited to 100 statements per call — chunk accordingly
     const CHUNK = 100;
     for (let i = 0; i < toInsert.length; i += CHUNK) {
       const chunk = toInsert.slice(i, i + CHUNK);
