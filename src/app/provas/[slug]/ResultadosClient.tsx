@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { formatTempo } from "@/lib/db";
 
 interface Resultado {
@@ -20,28 +21,73 @@ function parseSexo(categoria: string | null): "M" | "F" | null {
   return null;
 }
 
+function parseDistKm(categoria: string | null): number | null {
+  if (!categoria) return null;
+  const m = categoria.toUpperCase().match(/(\d+(?:[.,]\d+)?)\s*KM/);
+  if (!m) return null;
+  const km = parseFloat(m[1].replace(",", "."));
+  return km > 0 ? km : null;
+}
+
+function kmLabel(km: number): string {
+  return Number.isInteger(km) ? `${km}K` : `${km}K`;
+}
+
 export default function ResultadosClient({ results }: { results: Resultado[] }) {
   const [sexo, setSexo] = useState<"todos" | "M" | "F">("todos");
+  const [distFiltro, setDistFiltro] = useState<number | null>(null);
   const [busca, setBusca] = useState("");
 
   const temMasculino = useMemo(() => results.some(r => parseSexo(r.categoria) === "M"), [results]);
   const temFeminino = useMemo(() => results.some(r => parseSexo(r.categoria) === "F"), [results]);
   const temFiltroSexo = temMasculino && temFeminino;
 
+  const distancias = useMemo(() => {
+    const set = new Set<number>();
+    for (const r of results) {
+      const km = parseDistKm(r.categoria);
+      if (km !== null) set.add(km);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [results]);
+
+  const temFiltroDist = distancias.length > 1;
+
   const filtered = useMemo(() => {
     let r = results;
+    if (distFiltro !== null) r = r.filter(item => parseDistKm(item.categoria) === distFiltro);
     if (sexo !== "todos") r = r.filter(item => parseSexo(item.categoria) === sexo);
     if (busca.trim()) {
       const q = busca.trim().toLowerCase();
       r = r.filter(item => item.atleta_nome.toLowerCase().includes(q));
     }
     return r;
-  }, [results, sexo, busca]);
+  }, [results, sexo, distFiltro, busca]);
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-200 flex flex-wrap items-center gap-3">
         <span className="font-semibold text-slate-700 shrink-0">{filtered.length} finishers</span>
+
+        {temFiltroDist && (
+          <div className="flex gap-1 flex-wrap">
+            <button
+              onClick={() => setDistFiltro(null)}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${distFiltro === null ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            >
+              Todas
+            </button>
+            {distancias.map(km => (
+              <button
+                key={km}
+                onClick={() => setDistFiltro(distFiltro === km ? null : km)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${distFiltro === km ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              >
+                {kmLabel(km)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {temFiltroSexo && (
           <div className="flex gap-1">
@@ -92,9 +138,16 @@ export default function ResultadosClient({ results }: { results: Resultado[] }) 
               {filtered.map((r, i) => (
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5 font-bold text-orange-500 tabular-nums">
-                    {sexo === "todos" ? (r.colocacao_geral ?? i + 1) : i + 1}º
+                    {sexo === "todos" && distFiltro === null ? (r.colocacao_geral ?? i + 1) : i + 1}º
                   </td>
-                  <td className="px-4 py-2.5 font-medium text-slate-800">{r.atleta_nome}</td>
+                  <td className="px-4 py-2.5 font-medium text-slate-800">
+                    <Link
+                      href={`/atletas/${encodeURIComponent(r.atleta_nome)}`}
+                      className="hover:text-orange-500 hover:underline transition-colors"
+                    >
+                      {r.atleta_nome}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2.5 text-slate-500 hidden sm:table-cell">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/") || "—"}</td>
                   <td className="px-4 py-2.5 text-slate-500 hidden md:table-cell">{r.categoria || "—"}</td>
                   <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-800 tabular-nums">{formatTempo(r.tempo_liquido_seg)}</td>
