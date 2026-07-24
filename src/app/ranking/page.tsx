@@ -1,8 +1,25 @@
 import { getDB, formatTempo, distanciaLabel } from "@/lib/db";
 export const dynamic = "force-dynamic";
+import Link from "next/link";
 
 const UFs = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"];
 const DISTANCIAS = [{ label: "5K", v: 5000 }, { label: "10K", v: 10000 }, { label: "Meia", v: 21097 }, { label: "Maratona", v: 42195 }];
+
+// SQL expression that extracts the effective distance from the categoria field.
+// Sportschrono clax embeds the parcours (distance label) after " / " in categoria.
+// Space-delimited patterns are safe: "% 2 KM%" never matches "12 KM" or "22 KM".
+const DIST_SQL = `CASE
+  WHEN UPPER(r.categoria) LIKE '% 1 KM%' THEN 1000
+  WHEN UPPER(r.categoria) LIKE '% 2 KM%' THEN 2000
+  WHEN (UPPER(r.categoria) LIKE '% 2,5 KM%' OR UPPER(r.categoria) LIKE '% 2.5 KM%') THEN 2500
+  WHEN UPPER(r.categoria) LIKE '% 3 KM%' THEN 3000
+  WHEN UPPER(r.categoria) LIKE '% 4 KM%' THEN 4000
+  WHEN UPPER(r.categoria) LIKE '% 5 KM%' THEN 5000
+  WHEN (UPPER(r.categoria) LIKE '%10 KM%' OR UPPER(r.categoria) LIKE '%10KM%') THEN 10000
+  WHEN (UPPER(r.categoria) LIKE '%21 KM%' OR UPPER(r.categoria) LIKE '%MEIA%') THEN 21097
+  WHEN (UPPER(r.categoria) LIKE '%42 KM%' OR UPPER(r.categoria) LIKE '%MARATONA%') THEN 42195
+  ELSE p.distancia_metros
+END`;
 
 export default async function RankingPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const params = await searchParams;
@@ -13,24 +30,29 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
 
   const db = await getDB();
 
-  let query = `
-    SELECT r.atleta_nome, r.atleta_cidade, r.atleta_uf, r.categoria,
-           MIN(r.tempo_liquido_seg) as melhor_tempo,
-           COUNT(*) as total_provas,
-           p.distancia_metros
+  const query = `
+    SELECT
+      r.atleta_nome, r.atleta_cidade, r.atleta_uf, r.categoria,
+      MIN(r.tempo_liquido_seg) AS melhor_tempo,
+      COUNT(*)                 AS total_provas,
+      (${DIST_SQL})            AS distancia_metros
     FROM resultados r
     JOIN provas p ON p.id = r.prova_id
     WHERE 1=1
+      ${distancia ? `AND (${DIST_SQL}) = ?` : ""}
+      ${uf       ? "AND r.atleta_uf = ?"   : ""}
+      ${busca    ? "AND r.atleta_nome LIKE ?" : ""}
+      ${sexo === "M" ? "AND (r.categoria LIKE 'M-%' OR r.categoria LIKE 'M %' OR r.categoria LIKE '%MASCULINO%')" : ""}
+      ${sexo === "F" ? "AND (r.categoria LIKE 'F-%' OR r.categoria LIKE 'F %' OR r.categoria LIKE '%FEMININO%')" : ""}
+    GROUP BY r.atleta_nome, r.atleta_cidade, r.atleta_uf, (${DIST_SQL})
+    ORDER BY melhor_tempo ASC
+    LIMIT 100
   `;
+
   const binds: (string | number)[] = [];
-
-  if (distancia) { query += " AND p.distancia_metros = ?"; binds.push(distancia); }
-  if (uf) { query += " AND r.atleta_uf = ?"; binds.push(uf); }
-  if (busca) { query += " AND r.atleta_nome LIKE ?"; binds.push(`%${busca}%`); }
-  if (sexo === "M") { query += " AND (r.categoria LIKE 'M-%' OR r.categoria LIKE 'M %' OR r.categoria LIKE '%MASCULINO%')"; }
-  if (sexo === "F") { query += " AND (r.categoria LIKE 'F-%' OR r.categoria LIKE 'F %' OR r.categoria LIKE '%FEMININO%')"; }
-
-  query += " GROUP BY r.atleta_nome, r.atleta_cidade, r.atleta_uf, p.distancia_metros ORDER BY melhor_tempo ASC LIMIT 100";
+  if (distancia) binds.push(distancia);
+  if (uf)        binds.push(uf);
+  if (busca)     binds.push(`%${busca}%`);
 
   const { results } = await db.prepare(query).bind(...binds).all<{
     atleta_nome: string; atleta_cidade: string | null; atleta_uf: string | null;
@@ -83,8 +105,8 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
               <tr>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium w-12">#</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Atleta</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Local</th>
-                <th className="text-left px-4 py-3 text-slate-500 font-medium">Categoria</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium hidden sm:table-cell">Local</th>
+                <th className="text-left px-4 py-3 text-slate-500 font-medium hidden md:table-cell">Categoria</th>
                 <th className="text-left px-4 py-3 text-slate-500 font-medium">Distância</th>
                 <th className="text-right px-4 py-3 text-slate-500 font-medium">Melhor tempo</th>
                 <th className="text-right px-4 py-3 text-slate-500 font-medium">Provas</th>
@@ -94,9 +116,13 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
               {results.map((r, i) => (
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3 font-bold text-orange-500">{i + 1}º</td>
-                  <td className="px-4 py-3 font-semibold text-slate-800">{r.atleta_nome}</td>
-                  <td className="px-4 py-3 text-slate-500">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/")}</td>
-                  <td className="px-4 py-3 text-slate-500">{r.categoria || "—"}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-800">
+                    <Link href={`/atletas/${encodeURIComponent(r.atleta_nome)}`} className="hover:text-orange-500 hover:underline transition-colors">
+                      {r.atleta_nome}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/")}</td>
+                  <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{r.categoria || "—"}</td>
                   <td className="px-4 py-3 text-slate-500">{distanciaLabel(r.distancia_metros)}</td>
                   <td className="px-4 py-3 text-right font-mono font-bold text-slate-800">{formatTempo(r.melhor_tempo)}</td>
                   <td className="px-4 py-3 text-right text-slate-500">{r.total_provas}</td>

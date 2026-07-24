@@ -283,12 +283,22 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
     };
   }
 
-  // Parse results (already sorted by position)
-  const atletas = [];
-  let rank = 1;
+  // A clax file records multiple <R> tags per athlete (1km split, 2km split, finish, etc.)
+  // Deduplicate by dossard, keeping only the result with the maximum tempo (= finish line).
+  const resultMap: Record<string, Record<string, string>> = {};
   for (const m of xml.matchAll(/<R ([^/]+)\/>/g)) {
     const a = parseAttrsXml(m[1]);
-    const eng = engMap[a.d ?? ""];
+    if (!a.d) continue;
+    const tempo = parseClaxTempo(a.re ?? a.t ?? "") ?? 0;
+    const prev = resultMap[a.d];
+    const prevTempo = prev ? (parseClaxTempo(prev.re ?? prev.t ?? "") ?? 0) : 0;
+    if (tempo > prevTempo) resultMap[a.d] = a;
+  }
+
+  // Build athlete list sorted by finish time (ascending)
+  const atletas = [];
+  for (const [d, a] of Object.entries(resultMap)) {
+    const eng = engMap[d];
     if (!eng) continue;
     const tempoLiq = parseClaxTempo(a.re ?? a.t ?? "");
     if (!tempoLiq) continue;
@@ -299,10 +309,13 @@ async function scrapeClax(gliveUrl: string, tituloHint?: string) {
       categoria: (eng.categoria + (eng.parcours ? " / " + eng.parcours : "")).trim() || null,
       tempo_liquido_seg: tempoLiq,
       tempo_bruto_seg: null as number | null,
-      colocacao_geral: rank++,
+      colocacao_geral: null as number | null,
       distancia_metros: distMetros,
     });
   }
+  // Sort by finish time and assign rank
+  atletas.sort((a, b) => (a.tempo_liquido_seg ?? 0) - (b.tempo_liquido_seg ?? 0));
+  atletas.forEach((a, i) => { a.colocacao_geral = i + 1; });
 
   if (atletas.length === 0) throw new Error("Nenhum resultado encontrado no clax");
 
