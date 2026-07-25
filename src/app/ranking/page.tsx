@@ -17,7 +17,7 @@ const DIST_SQL = `CASE
   WHEN (UPPER(r.categoria) LIKE '%42 KM%' OR UPPER(r.categoria) LIKE '%MARATONA%') THEN 42195
   WHEN UPPER(r.categoria) LIKE '% 1 KM%' THEN 1000
   WHEN (UPPER(r.categoria) LIKE '% 2 KM%' OR UPPER(r.categoria) LIKE '%/2KM%' OR UPPER(r.categoria) LIKE '% 2KM%') THEN 2000
-  WHEN (UPPER(r.categoria) LIKE '% 2,5 KM%' OR UPPER(r.categoria) LIKE '% 2.5 KM%') THEN 2500
+  WHEN (UPPER(r.categoria) LIKE '% 2,5 KM%' OR UPPER(r.categoria) LIKE '% 2.5 KM%' OR UPPER(r.categoria) LIKE '%2,5KM%' OR UPPER(r.categoria) LIKE '%2.5KM%') THEN 2500
   WHEN (UPPER(r.categoria) LIKE '% 3 KM%' OR (UPPER(r.categoria) LIKE '%3KM%' AND UPPER(r.categoria) NOT LIKE '%10%' AND UPPER(r.categoria) NOT LIKE '%13%')) THEN 3000
   WHEN (UPPER(r.categoria) LIKE '% 3,5 KM%' OR UPPER(r.categoria) LIKE '% 3.5 KM%') THEN 3500
   WHEN UPPER(r.categoria) LIKE '% 4 KM%' THEN 4000
@@ -37,7 +37,10 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
 
   const query = `
     SELECT
-      r.atleta_nome, r.atleta_cidade, r.atleta_uf, r.categoria,
+      r.atleta_nome,
+      COALESCE(r.atleta_cidade, MIN(p.cidade)) AS atleta_cidade,
+      COALESCE(r.atleta_uf,    MIN(p.uf))     AS atleta_uf,
+      r.categoria,
       MIN(r.tempo_liquido_seg) AS melhor_tempo,
       COUNT(*)                 AS total_provas,
       COALESCE((${DIST_SQL}), p.distancia_metros) AS distancia_metros
