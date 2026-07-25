@@ -156,7 +156,7 @@ export default function ResultadosClient({ results }: { results: Resultado[] }) 
                     </Link>
                   </td>
                   <td className="px-4 py-2.5 text-slate-500 hidden sm:table-cell">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/") || "—"}</td>
-                  <td className="px-4 py-2.5 text-slate-500 hidden md:table-cell">{r.categoria || "—"}</td>
+                  <td className="px-4 py-2.5 text-slate-500 hidden md:table-cell">{r.categoria?.split(/\s*\/\s*/)[0]?.trim() || "—"}</td>
                   <td className="px-4 py-2.5 text-right font-mono font-bold text-slate-800 tabular-nums">{formatTempo(r.tempo_liquido_seg)}</td>
                 </tr>
               ))}

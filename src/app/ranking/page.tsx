@@ -8,18 +8,21 @@ const DISTANCIAS = [{ label: "5K", v: 5000 }, { label: "10K", v: 10000 }, { labe
 // SQL expression that extracts the effective distance from the categoria field.
 // Sportschrono clax embeds the parcours (distance label) after " / " in categoria.
 // Space-delimited patterns are safe: "% 2 KM%" never matches "12 KM" or "22 KM".
+// Returns NULL for unrecognized KM categories (e.g. "2-5 KM", "2km", "3,5 KM").
+// NULL won't match any specific distance filter, so those athletes only appear in "todas as distâncias".
+// Falls back to p.distancia_metros only when categoria has NO KM mention (pure age/sex categories).
 const DIST_SQL = `CASE
   WHEN (UPPER(r.categoria) LIKE '%10 KM%' OR UPPER(r.categoria) LIKE '%10KM%') THEN 10000
   WHEN (UPPER(r.categoria) LIKE '%21 KM%' OR UPPER(r.categoria) LIKE '%MEIA%') THEN 21097
   WHEN (UPPER(r.categoria) LIKE '%42 KM%' OR UPPER(r.categoria) LIKE '%MARATONA%') THEN 42195
   WHEN UPPER(r.categoria) LIKE '% 1 KM%' THEN 1000
-  WHEN UPPER(r.categoria) LIKE '% 2 KM%' THEN 2000
+  WHEN (UPPER(r.categoria) LIKE '% 2 KM%' OR UPPER(r.categoria) LIKE '%/2KM%' OR UPPER(r.categoria) LIKE '% 2KM%') THEN 2000
   WHEN (UPPER(r.categoria) LIKE '% 2,5 KM%' OR UPPER(r.categoria) LIKE '% 2.5 KM%') THEN 2500
-  WHEN UPPER(r.categoria) LIKE '% 3 KM%' THEN 3000
-  WHEN (UPPER(r.categoria) LIKE '%3KM%' AND UPPER(r.categoria) NOT LIKE '%10%' AND UPPER(r.categoria) NOT LIKE '%13%') THEN 3000
+  WHEN (UPPER(r.categoria) LIKE '% 3 KM%' OR (UPPER(r.categoria) LIKE '%3KM%' AND UPPER(r.categoria) NOT LIKE '%10%' AND UPPER(r.categoria) NOT LIKE '%13%')) THEN 3000
+  WHEN (UPPER(r.categoria) LIKE '% 3,5 KM%' OR UPPER(r.categoria) LIKE '% 3.5 KM%') THEN 3500
   WHEN UPPER(r.categoria) LIKE '% 4 KM%' THEN 4000
-  WHEN UPPER(r.categoria) LIKE '% 5 KM%' THEN 5000
-  WHEN (UPPER(r.categoria) LIKE '%5KM%' AND UPPER(r.categoria) NOT LIKE '%15%' AND UPPER(r.categoria) NOT LIKE '%25%') THEN 5000
+  WHEN (UPPER(r.categoria) LIKE '% 5 KM%' OR (UPPER(r.categoria) LIKE '%5KM%' AND UPPER(r.categoria) NOT LIKE '%15%' AND UPPER(r.categoria) NOT LIKE '%25%')) THEN 5000
+  WHEN UPPER(r.categoria) LIKE '%KM%' THEN NULL
   ELSE p.distancia_metros
 END`;
 
@@ -37,16 +40,16 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
       r.atleta_nome, r.atleta_cidade, r.atleta_uf, r.categoria,
       MIN(r.tempo_liquido_seg) AS melhor_tempo,
       COUNT(*)                 AS total_provas,
-      (${DIST_SQL})            AS distancia_metros
+      COALESCE((${DIST_SQL}), p.distancia_metros) AS distancia_metros
     FROM resultados r
     JOIN provas p ON p.id = r.prova_id
-    WHERE r.tempo_liquido_seg * 6 > (${DIST_SQL})
+    WHERE r.tempo_liquido_seg * 6 > COALESCE((${DIST_SQL}), p.distancia_metros)
       ${distancia ? `AND (${DIST_SQL}) = ?` : ""}
       ${uf       ? "AND r.atleta_uf = ?"   : ""}
       ${busca    ? "AND r.atleta_nome LIKE ?" : ""}
       ${sexo === "M" ? "AND (r.categoria LIKE 'M-%' OR r.categoria LIKE 'M %' OR r.categoria LIKE '%MASCULINO%')" : ""}
       ${sexo === "F" ? "AND (r.categoria LIKE 'F-%' OR r.categoria LIKE 'F %' OR r.categoria LIKE '%FEMININO%')" : ""}
-    GROUP BY r.atleta_nome, r.atleta_cidade, r.atleta_uf, (${DIST_SQL})
+    GROUP BY r.atleta_nome, r.atleta_cidade, r.atleta_uf, COALESCE((${DIST_SQL}), p.distancia_metros)
     ORDER BY melhor_tempo ASC
     LIMIT 100
   `;
@@ -124,7 +127,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{[r.atleta_cidade, r.atleta_uf].filter(Boolean).join("/")}</td>
-                  <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{r.categoria || "—"}</td>
+                  <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{r.categoria?.split(/\s*\/\s*/)[0]?.trim() || "—"}</td>
                   <td className="px-4 py-3 text-slate-500">{distanciaLabel(r.distancia_metros)}</td>
                   <td className="px-4 py-3 text-right font-mono font-bold text-slate-800">{formatTempo(r.melhor_tempo)}</td>
                   <td className="px-4 py-3 text-right text-slate-500">{r.total_provas}</td>
