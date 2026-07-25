@@ -55,6 +55,13 @@ export default function ResultadosClient({ results }: { results: Resultado[] }) 
 
   const filtered = useMemo(() => {
     let r = results;
+    // Remove timing artifacts: assume max speed = 6 m/s (21.6 km/h). Use categoria distance
+    // when available; otherwise keep the result (can't determine minimum).
+    r = r.filter(item => {
+      const km = parseDistKm(item.categoria);
+      if (km === null) return true;
+      return item.tempo_liquido_seg * 6 > km * 1000;
+    });
     if (distFiltro !== null) r = r.filter(item => parseDistKm(item.categoria) === distFiltro);
     if (sexo !== "todos") r = r.filter(item => parseSexo(item.categoria) === sexo);
     if (busca.trim()) {

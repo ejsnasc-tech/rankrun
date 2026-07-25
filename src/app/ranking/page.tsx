@@ -40,7 +40,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Prom
       (${DIST_SQL})            AS distancia_metros
     FROM resultados r
     JOIN provas p ON p.id = r.prova_id
-    WHERE 1=1
+    WHERE r.tempo_liquido_seg * 6 > (${DIST_SQL})
       ${distancia ? `AND (${DIST_SQL}) = ?` : ""}
       ${uf       ? "AND r.atleta_uf = ?"   : ""}
       ${busca    ? "AND r.atleta_nome LIKE ?" : ""}
