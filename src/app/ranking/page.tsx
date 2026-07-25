@@ -9,15 +9,17 @@ const DISTANCIAS = [{ label: "5K", v: 5000 }, { label: "10K", v: 10000 }, { labe
 // Sportschrono clax embeds the parcours (distance label) after " / " in categoria.
 // Space-delimited patterns are safe: "% 2 KM%" never matches "12 KM" or "22 KM".
 const DIST_SQL = `CASE
+  WHEN (UPPER(r.categoria) LIKE '%10 KM%' OR UPPER(r.categoria) LIKE '%10KM%') THEN 10000
+  WHEN (UPPER(r.categoria) LIKE '%21 KM%' OR UPPER(r.categoria) LIKE '%MEIA%') THEN 21097
+  WHEN (UPPER(r.categoria) LIKE '%42 KM%' OR UPPER(r.categoria) LIKE '%MARATONA%') THEN 42195
   WHEN UPPER(r.categoria) LIKE '% 1 KM%' THEN 1000
   WHEN UPPER(r.categoria) LIKE '% 2 KM%' THEN 2000
   WHEN (UPPER(r.categoria) LIKE '% 2,5 KM%' OR UPPER(r.categoria) LIKE '% 2.5 KM%') THEN 2500
   WHEN UPPER(r.categoria) LIKE '% 3 KM%' THEN 3000
+  WHEN (UPPER(r.categoria) LIKE '%3KM%' AND UPPER(r.categoria) NOT LIKE '%10%' AND UPPER(r.categoria) NOT LIKE '%13%') THEN 3000
   WHEN UPPER(r.categoria) LIKE '% 4 KM%' THEN 4000
   WHEN UPPER(r.categoria) LIKE '% 5 KM%' THEN 5000
-  WHEN (UPPER(r.categoria) LIKE '%10 KM%' OR UPPER(r.categoria) LIKE '%10KM%') THEN 10000
-  WHEN (UPPER(r.categoria) LIKE '%21 KM%' OR UPPER(r.categoria) LIKE '%MEIA%') THEN 21097
-  WHEN (UPPER(r.categoria) LIKE '%42 KM%' OR UPPER(r.categoria) LIKE '%MARATONA%') THEN 42195
+  WHEN (UPPER(r.categoria) LIKE '%5KM%' AND UPPER(r.categoria) NOT LIKE '%15%' AND UPPER(r.categoria) NOT LIKE '%25%') THEN 5000
   ELSE p.distancia_metros
 END`;
 
