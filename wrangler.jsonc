@@ -10,6 +10,10 @@
   "vars": {
     "ADMIN_PASSWORD": "rankrun2026"
   },
+  "routes": [
+    { "pattern": "rankrun.com.br", "custom_domain": true },
+    { "pattern": "www.rankrun.com.br", "custom_domain": true }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
