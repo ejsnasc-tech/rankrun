@@ -414,8 +414,8 @@ export async function POST(req: NextRequest) {
     }
 
     await db.prepare(
-      `INSERT INTO provas (id, titulo, cidade, uf, data, distancia_metros, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'encerradas')`
+      `INSERT INTO provas (id, titulo, cidade, uf, data, distancia_metros, status, link_oficial)
+       VALUES (?, ?, ?, ?, ?, ?, 'encerradas', ?)`
     ).bind(
       provaId,
       prova.titulo || "Sem título",
@@ -423,6 +423,7 @@ export async function POST(req: NextRequest) {
       prova.uf || "",            // NOT NULL — empty string when unknown
       prova.data || new Date().toISOString().slice(0, 10),
       prova.distancia_metros || 5000,
+      url,
     ).run();
 
     // Batch insert all results (single D1 roundtrip — fast)
