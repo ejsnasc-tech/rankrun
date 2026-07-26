@@ -1,5 +1,6 @@
 {
   "name": "rankrun",
+  "account_id": "4486f5377d83216c279533b9c55905fc",
   "compatibility_date": "2024-12-18",
   "compatibility_flags": ["nodejs_compat"],
   "main": ".open-next/worker.js",
@@ -13,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "rankrun-db",
-      "database_id": "91847b52-d258-463a-a14b-2f3fcccd4215"
+      "database_id": "3e86b168-9ce1-4437-9e2c-e9df9dab17e0"
     }
   ]
 }
